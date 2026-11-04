@@ -11,6 +11,9 @@ import kotlin.math.sqrt
 private const val MIN_STATIONS_FOR_BRAND_FILTER = 20
 private const val EARTH_RADIUS_KM = 6371.0
 
+// Se compila una sola vez: buscar normaliza decenas de miles de textos en cada pulsación.
+private val ACCENT_MARKS = Regex("\\p{M}")
+
 /** Devuelve las marcas con suficientes gasolineras para ofrecerlas en el filtro, de más a menos frecuentes. */
 fun popularBrands(stations: List<Station>): List<String> =
     stations.groupingBy { it.brand }.eachCount()
@@ -20,7 +23,7 @@ fun popularBrands(stations: List<Station>): List<String> =
 
 /** Quita tildes y mayúsculas para que buscar "malaga" encuentre "MÁLAGA". */
 fun normalizeText(text: String): String =
-    Normalizer.normalize(text, Normalizer.Form.NFD).replace(Regex("\\p{M}"), "").lowercase()
+    Normalizer.normalize(text, Normalizer.Form.NFD).replace(ACCENT_MARKS, "").lowercase()
 
 /** Indica si la gasolinera coincide con un texto ya normalizado por localidad, dirección, provincia o marca. */
 fun Station.matches(normalizedQuery: String): Boolean =
