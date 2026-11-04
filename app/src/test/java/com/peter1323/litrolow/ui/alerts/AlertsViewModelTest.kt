@@ -90,6 +90,8 @@ class AlertsViewModelTest {
         assertFalse(detail.createAlert(FuelType.GASOLINE_95, ""))
         assertFalse(detail.createAlert(FuelType.GASOLINE_95, "abc"))
         assertFalse(detail.createAlert(FuelType.GASOLINE_95, "0"))
+        assertFalse(detail.createAlert(FuelType.GASOLINE_95, "65"))
+        assertFalse(detail.createAlert(FuelType.GASOLINE_95, "10,01"))
         assertTrue(alertDao.alerts.value.isEmpty())
     }
 }

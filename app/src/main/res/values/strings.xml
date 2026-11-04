@@ -37,7 +37,7 @@
 
     <string name="create_alert">Crear alerta de precio</string>
     <string name="alert_max_price">Avísame si baja de (€/litro)</string>
-    <string name="alert_invalid_price">Escribe un precio válido, por ejemplo 1,45</string>
+    <string name="alert_invalid_price">Escribe un precio de hasta 10 €, por ejemplo 1,45</string>
     <string name="alert_saved">Alerta guardada. Comprobamos los precios cada pocas horas.</string>
     <string name="save">Guardar</string>
     <string name="cancel">Cancelar</string>

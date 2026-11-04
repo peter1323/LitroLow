@@ -8,9 +8,12 @@ import com.peter1323.litrolow.data.model.PriceAlert
 import com.peter1323.litrolow.data.model.Station
 import kotlinx.coroutines.flow.Flow
 
+// Ningún carburante se acerca a este precio: algo mayor es una errata, como escribir 65 en vez de 1,65.
+private const val MAX_ALERT_PRICE = 10.0
+
 /** Crea una alerta a partir del precio escrito por el usuario, o devuelve null si no es válido. */
 fun priceAlertFor(station: Station, fuel: FuelType, maxPriceText: String): PriceAlert? {
-    val maxPrice = parsePrice(maxPriceText) ?: return null
+    val maxPrice = parsePrice(maxPriceText)?.takeIf { it <= MAX_ALERT_PRICE } ?: return null
     return PriceAlert(
         stationId = station.id,
         stationName = "${station.brand} (${station.locality})",
