@@ -14,10 +14,13 @@ import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
+import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
 import com.peter1323.litrolow.R
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -25,6 +28,7 @@ import java.util.Locale
 
 // Con menos de dos puntos no hay línea que dibujar.
 private const val MIN_POINTS_FOR_CHART = 2
+private const val RANGE_MARGIN = 0.02
 
 /** Gráfica de la evolución del precio, o una explicación si todavía no hay datos suficientes. */
 @Composable
@@ -44,15 +48,24 @@ fun PriceHistoryChart(points: List<ChartPoint>) {
             lineModel { series(points.indices.toList(), points.map { it.price }) }
         }
     }
-    CartesianChartHost(
-        rememberCartesianChart(
-            rememberLineCartesianLayer(),
-            startAxis = VerticalAxis.rememberStart(valueFormatter = priceFormatter()),
-            bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = dateFormatter(points)),
-        ),
-        producer,
-        Modifier.fillMaxWidth().height(220.dp),
-    )
+    // El tema M3 da a los ejes colores legibles en claro y en oscuro.
+    ProvideVicoTheme(rememberM3VicoTheme()) {
+        CartesianChartHost(
+            rememberCartesianChart(
+                rememberLineCartesianLayer(rangeProvider = visibleRange(points)),
+                startAxis = VerticalAxis.rememberStart(valueFormatter = priceFormatter()),
+                bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = dateFormatter(points)),
+            ),
+            producer,
+            Modifier.fillMaxWidth().height(220.dp),
+        )
+    }
+}
+
+/** Ajusta el eje vertical a los precios: empezar en 0 aplanaría la línea y ocultaría las variaciones. */
+private fun visibleRange(points: List<ChartPoint>): CartesianLayerRangeProvider {
+    val prices = points.map { it.price }
+    return CartesianLayerRangeProvider.fixed(minY = prices.min() - RANGE_MARGIN, maxY = prices.max() + RANGE_MARGIN)
 }
 
 /** Formatea el eje vertical con los tres decimales de los precios. */
