@@ -24,4 +24,12 @@
     <string name="search_hint">Buscar localidad, dirección o marca</string>
     <string name="all_brands">Todas</string>
     <string name="empty_stations">Ninguna gasolinera coincide con estos filtros.</string>
+
+    <string name="station_not_found">Esta gasolinera ya no aparece en los datos del Ministerio.</string>
+    <string name="schedule_format">Horario: %1$s</string>
+    <string name="add_favorite">Añadir a favoritas</string>
+    <string name="remove_favorite">Quitar de favoritas</string>
+    <string name="open_route">Cómo llegar</string>
+    <string name="no_maps_app">No hay ninguna app de mapas instalada.</string>
+    <string name="empty_favorites">Aún no tienes favoritas. Abre una gasolinera y pulsa el corazón para guardarla.</string>
 </resources>

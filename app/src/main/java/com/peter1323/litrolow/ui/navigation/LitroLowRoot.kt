@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,13 +30,20 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peter1323.litrolow.LitroLowApplication
 import com.peter1323.litrolow.R
+import com.peter1323.litrolow.ui.detail.DetailScreen
+import com.peter1323.litrolow.ui.detail.DetailViewModel
+import com.peter1323.litrolow.ui.favorites.FavoritesScreen
+import com.peter1323.litrolow.ui.favorites.FavoritesViewModel
 import com.peter1323.litrolow.ui.stations.StationsScreen
 import com.peter1323.litrolow.ui.stations.StationsViewModel
 
 /** Pestañas de la barra inferior, con su ruta de navegación. */
 private enum class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector) {
     STATIONS("stations", R.string.tab_stations, Icons.AutoMirrored.Filled.List),
+    FAVORITES("favorites", R.string.tab_favorites, Icons.Default.Favorite),
 }
+
+private const val DETAIL_ARG = "stationId"
 
 /** Raíz de la interfaz: barra superior, barra inferior y navegación entre pantallas. */
 @Composable
@@ -101,9 +109,17 @@ private fun BottomBar(currentRoute: String?, navController: NavHostController) {
 @Composable
 private fun AppNavHost(navController: NavHostController, modifier: Modifier) {
     val app = LocalContext.current.applicationContext as LitroLowApplication
+    val openDetail: (String) -> Unit = { navController.navigate("detail/$it") }
     NavHost(navController, startDestination = Tab.STATIONS.route, modifier = modifier) {
         composable(Tab.STATIONS.route) {
-            StationsScreen(viewModel { StationsViewModel(app.stationRepository) }, onStationClick = {})
+            StationsScreen(viewModel { StationsViewModel(app.stationRepository) }, openDetail)
+        }
+        composable(Tab.FAVORITES.route) {
+            FavoritesScreen(viewModel { FavoritesViewModel(app.stationRepository) }, openDetail)
+        }
+        composable("detail/{$DETAIL_ARG}") { entry ->
+            val stationId = requireNotNull(entry.arguments?.getString(DETAIL_ARG))
+            DetailScreen(viewModel { DetailViewModel(stationId, app.stationRepository) })
         }
     }
 }
