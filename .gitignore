@@ -1,0 +1,25 @@
+# Gradle y compilación
+.gradle/
+build/
+*/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+
+# Artefactos y firmas
+*.apk
+*.aab
+*.ap_
+*.dex
+*.jks
+*.keystore
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
