@@ -13,7 +13,7 @@
     <string name="theme_to_dark">Cambiar a tema oscuro</string>
     <string name="back">Volver</string>
     <string name="retry">Reintentar</string>
-    <string name="loading">Cargando precios…</string>
+    <string name="loading">Cargando precios… La primera vez puede tardar un poco.</string>
     <string name="price_format">%.3f €</string>
     <string name="no_price">—</string>
 

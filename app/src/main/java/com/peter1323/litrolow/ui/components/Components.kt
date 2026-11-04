@@ -58,7 +58,7 @@ fun LoadingView(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         CircularProgressIndicator()
-        Text(stringResource(R.string.loading), Modifier.padding(top = 16.dp))
+        Text(stringResource(R.string.loading), Modifier.padding(16.dp), textAlign = TextAlign.Center)
     }
 }
 

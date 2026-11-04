@@ -1,11 +1,15 @@
 package com.peter1323.litrolow.ui.map
 
 import android.content.Context
+import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -20,11 +24,22 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.TilesOverlay
 import java.io.File
 import org.osmdroid.util.GeoPoint as OsmPoint
 
 private const val DEFAULT_ZOOM = 13.0
+
+// Oscurece el mapa invirtiendo el brillo y girando el tono 180 grados: invertir sin más volvería el mar marrón y los bosques morados.
+private val DARK_MAP_FILTER = ColorMatrixColorFilter(
+    ColorMatrix(
+        floatArrayOf(
+            0.574f, -1.43f, -0.144f, 0f, 255f,
+            -0.426f, -0.43f, -0.144f, 0f, 255f,
+            -0.426f, -1.43f, 0.856f, 0f, 255f,
+            0f, 0f, 0f, 1f, 0f,
+        ),
+    ),
+)
 
 /** Mapa de OpenStreetMap con el punto buscado y un marcador por gasolinera; la más barata va destacada. */
 @Composable
@@ -37,14 +52,18 @@ fun StationsMap(state: MapUiState, isDark: Boolean, onStationClick: (String) -> 
         state.center?.let { mapView.controller.setCenter(it.toOsm()) }
     }
     LaunchedEffect(isDark) {
-        // Invierte los colores del mapa para que no deslumbre en el tema oscuro.
-        mapView.overlayManager.tilesOverlay.setColorFilter(if (isDark) TilesOverlay.INVERT_COLORS else null)
+        mapView.overlayManager.tilesOverlay.setColorFilter(if (isDark) DARK_MAP_FILTER else null)
+        // La atribución de OpenStreetMap es obligatoria y debe poder leerse sobre cualquier fondo.
+        mapView.overlays.filterIsInstance<CopyrightOverlay>().forEach {
+            it.setTextColor(if (isDark) Color.WHITE else Color.BLACK)
+        }
         mapView.invalidate()
     }
     LaunchedEffect(state.nearby, state.center) {
         showMarkers(mapView, state, onStationClick)
     }
-    AndroidView({ mapView }, modifier)
+    // Sin recortar, el mapa puede dibujarse encima de los controles vecinos.
+    AndroidView({ mapView }, modifier.clipToBounds())
 }
 
 /** Crea el mapa. La política de OpenStreetMap exige identificar la app y mostrar la atribución. */

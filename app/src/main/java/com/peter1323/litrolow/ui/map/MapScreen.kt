@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -72,19 +73,24 @@ fun MapScreen(viewModel: MapViewModel, isDark: Boolean, onStationClick: (String)
 @Composable
 private fun AddressSearch(onSearch: (String) -> Unit) {
     var address by rememberSaveable { mutableStateOf("") }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val search = {
+        keyboard?.hide()
+        onSearch(address)
+    }
     OutlinedTextField(
         value = address,
         onValueChange = { address = it },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         placeholder = { Text(stringResource(R.string.map_address_hint)) },
         trailingIcon = {
-            IconButton(onClick = { onSearch(address) }) {
+            IconButton(onClick = search) {
                 Icon(Icons.Default.Search, stringResource(R.string.map_search))
             }
         },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch(address) }),
+        keyboardActions = KeyboardActions(onSearch = { search() }),
     )
 }
 
