@@ -1,9 +1,13 @@
 package com.peter1323.litrolow.data.model
 
+import kotlin.math.round
+
 /** Litros que se suponen hasta que el usuario indica los que suele echar; el texto siempre muestra la cifra usada. */
 const val DEFAULT_TANK_LITRES = 40
 
 const val CENTS_PER_EURO = 100
+
+private const val PRICE_PRECISION = 1000.0
 
 private const val MIN_TANK_LITRES = 1
 
@@ -40,7 +44,10 @@ data class PriceComparison(val min: Double, val max: Double, val average: Double
 
 /** Calcula las referencias de una zona; con menos de dos precios no hay nada que comparar. */
 fun comparePrices(prices: List<Double>): PriceComparison? =
-    if (prices.size < 2) null else PriceComparison(prices.min(), prices.max(), prices.average())
+    if (prices.size < 2) null else PriceComparison(prices.min(), prices.max(), roundToPriceDecimals(prices.average()))
+
+/** Redondea a tres decimales, como se muestra el precio, para que el ahorro cuadre al calcularlo con la media que se ve. */
+private fun roundToPriceDecimals(price: Double): Double = round(price * PRICE_PRECISION) / PRICE_PRECISION
 
 /** Convierte lo escrito en los litros del depósito, o devuelve null si no es una cantidad válida. */
 fun parseTankLitres(text: String): Int? =

@@ -36,6 +36,14 @@ class PriceComparisonTest {
         assertEquals(-5.0, comparison.centsBelowAverage(1.55), 0.0001)
     }
 
+    /** La media va redondeada como se muestra, para que el ahorro cuadre si se calcula a mano. */
+    @Test
+    fun `el ahorro se calcula con la media que se ve`() {
+        val rounded = comparePrices(listOf(1.5, 1.5, 1.6))!!
+        assertEquals(1.533, rounded.average, 0.0)
+        assertEquals(0.99, rounded.savings(1.5, 30), 0.0001)
+    }
+
     /** Con una sola gasolinera no hay nada con lo que comparar. */
     @Test
     fun `necesita al menos dos precios`() {
