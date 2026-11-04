@@ -26,8 +26,8 @@
     <string name="hero_cheapest_spain">La más barata de España</string>
     <string name="hero_cheapest_brand_in">La más barata de %1$s en %2$s</string>
     <string name="zone_with_brand">las %1$s de %2$s</string>
-    <string name="savings_below_average">Ahorras %1$s € llenando %2$d L frente a la media de %3$s</string>
-    <string name="savings_above_average">Pagas %1$s € más llenando %2$d L frente a la media de %3$s</string>
+    <string name="savings_below_average">Ahorras %1$s € en total llenando %2$d L (media de %3$s: %4$s)</string>
+    <string name="savings_above_average">Pagas %1$s € más en total llenando %2$d L (media de %3$s: %4$s)</string>
     <string name="price_at_average">Precio en la media de %1$s</string>
     <string name="brand_vs_cheapest">Si no te importa la marca, en %1$s (%2$s) ahorras %3$s € más</string>
     <string name="hero_search_hint">Busca tu localidad para ver cuánto ahorras</string>

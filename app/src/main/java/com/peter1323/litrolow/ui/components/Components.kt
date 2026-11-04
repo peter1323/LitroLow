@@ -88,15 +88,16 @@ fun formatAlertPrice(price: Double): String =
 fun formatDecimal(value: Double, decimals: Int): String =
     String.format(SpanishLocale, "%.${decimals}f", value)
 
-/** Explica en euros lo que se ahorra o se paga de más en un repostaje frente a la media de [zone]. */
+/** Explica el total en euros que se ahorra o se paga de más en un repostaje, junto al precio medio de [zone]. */
 @Composable
 fun savingsText(price: Double, comparison: PriceComparison, litres: Int, zone: String): String {
     val cents = comparison.centsBelowAverage(price)
     val total = formatDecimal(abs(comparison.savings(price, litres)), 2)
+    val average = formatPrice(comparison.average)
     return when {
         abs(cents) < MIN_VISIBLE_CENTS -> stringResource(R.string.price_at_average, zone)
-        cents > 0 -> stringResource(R.string.savings_below_average, total, litres, zone)
-        else -> stringResource(R.string.savings_above_average, total, litres, zone)
+        cents > 0 -> stringResource(R.string.savings_below_average, total, litres, zone, average)
+        else -> stringResource(R.string.savings_above_average, total, litres, zone, average)
     }
 }
 
