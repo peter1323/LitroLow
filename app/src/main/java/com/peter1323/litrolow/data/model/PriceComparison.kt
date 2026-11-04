@@ -44,10 +44,16 @@ data class PriceComparison(val min: Double, val max: Double, val average: Double
 
 /** Calcula las referencias de una zona; con menos de dos precios no hay nada que comparar. */
 fun comparePrices(prices: List<Double>): PriceComparison? =
-    if (prices.size < 2) null else PriceComparison(prices.min(), prices.max(), roundToPriceDecimals(prices.average()))
+    if (prices.size < 2) null else PriceComparison(prices.min(), prices.max(), roundedAverage(prices))
 
-/** Redondea a tres decimales, como se muestra el precio, para que el ahorro cuadre al calcularlo con la media que se ve. */
-private fun roundToPriceDecimals(price: Double): Double = round(price * PRICE_PRECISION) / PRICE_PRECISION
+/**
+ * Media redondeada a tres decimales, como se muestra el precio, para que el ahorro cuadre al calcularlo con la media
+ * que se ve. Suma en milésimas enteras: con decimales, el orden de los precios podría cambiar el último dígito.
+ */
+private fun roundedAverage(prices: List<Double>): Double {
+    val totalThousandths = prices.sumOf { round(it * PRICE_PRECISION).toLong() }
+    return round(totalThousandths.toDouble() / prices.size) / PRICE_PRECISION
+}
 
 /** Convierte lo escrito en los litros del depósito, o devuelve null si no es una cantidad válida. */
 fun parseTankLitres(text: String): Int? =

@@ -3,6 +3,7 @@ package com.peter1323.litrolow.data.model
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import kotlin.random.Random
 
 /** Comprueba el semáforo de precios, el cálculo del ahorro y los litros del depósito. */
 class PriceComparisonTest {
@@ -42,6 +43,14 @@ class PriceComparisonTest {
         val rounded = comparePrices(listOf(1.5, 1.5, 1.6))!!
         assertEquals(1.533, rounded.average, 0.0)
         assertEquals(0.99, rounded.savings(1.5, 30), 0.0001)
+    }
+
+    /** La lista y la ficha leen los precios en distinto orden y deben mostrar la misma media. */
+    @Test
+    fun `la media no depende del orden de los precios`() {
+        val prices = listOf(1.719, 1.549, 1.587, 1.637, 1.729, 1.739, 1.769, 1.859, 1.725, 1.689, 1.655, 1.843, 1.611, 1.797)
+        val expected = comparePrices(prices)!!.average
+        repeat(200) { seed -> assertEquals(expected, comparePrices(prices.shuffled(Random(seed)))!!.average, 0.0) }
     }
 
     /** Con una sola gasolinera no hay nada con lo que comparar. */
