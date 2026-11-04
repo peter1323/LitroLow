@@ -1,6 +1,6 @@
-<img src="docs/icon.svg" alt="Icono de LitroLow" width="120">
+<p align="center"><img src="docs/icon.svg" alt="Icono de LitroLow" width="120"></p>
 
-# LitroLow
+<h1 align="center">LitroLow</h1>
 
 App Android nativa para encontrar la gasolina más barata de España con los precios oficiales del Ministerio. Compara miles de gasolineras, incluidas las low cost, muestra las cercanas en un mapa y avisa cuando un precio baja del máximo que elijas.
 
