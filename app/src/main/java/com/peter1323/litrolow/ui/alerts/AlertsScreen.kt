@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -16,6 +17,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
+import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.PriceAlert
+import com.peter1323.litrolow.ui.components.AlertFormDialog
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
 import com.peter1323.litrolow.ui.components.formatAlertPrice
@@ -43,7 +49,7 @@ fun AlertsScreen(viewModel: AlertsViewModel, onAlertClick: (String) -> Unit) {
         ) {
             item { NotificationsOffNotice() }
             items(state.alerts, key = { it.id }) { alert ->
-                AlertCard(alert, { onAlertClick(alert.stationId) }, { viewModel.delete(alert.id) })
+                AlertCard(alert, state.soldFuels[alert.stationId].orEmpty(), viewModel) { onAlertClick(alert.stationId) }
             }
         }
     }
@@ -61,18 +67,33 @@ private fun NotificationsOffNotice() {
     }
 }
 
-/** Tarjeta de una alerta con su gasolinera, combustible, precio máximo y botón de borrar. */
+/** Tarjeta de una alerta con su gasolinera, combustible, precio máximo y botones de editar y borrar. */
 @Composable
-private fun AlertCard(alert: PriceAlert, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun AlertCard(alert: PriceAlert, soldFuels: List<FuelType>, viewModel: AlertsViewModel, onClick: () -> Unit) {
+    var isEditing by rememberSaveable { mutableStateOf(false) }
     Card(onClick = onClick) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(alert.stationName, fontWeight = FontWeight.Bold)
                 Text(stringResource(R.string.alert_summary, stringResource(alert.fuel.label), formatAlertPrice(alert.maxPrice)))
             }
-            IconButton(onClick = onDelete) {
+            IconButton(onClick = { isEditing = true }) {
+                Icon(Icons.Default.Edit, stringResource(R.string.edit_alert))
+            }
+            IconButton(onClick = { viewModel.delete(alert.id) }) {
                 Icon(Icons.Default.Delete, stringResource(R.string.delete_alert))
             }
         }
+    }
+    if (isEditing) {
+        AlertFormDialog(
+            title = R.string.edit_alert,
+            // Si la gasolinera ya no está en los datos, al menos se puede corregir el precio.
+            fuels = (soldFuels + alert.fuel).distinct(),
+            initialFuel = alert.fuel,
+            initialPrice = formatAlertPrice(alert.maxPrice),
+            onSave = { fuel, price -> viewModel.update(alert, fuel, price) },
+            onDismiss = { isEditing = false },
+        )
     }
 }

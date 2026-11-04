@@ -41,7 +41,7 @@ class AlertsViewModelTest {
 
     /** Crea una alerta de Gasolina 95 con máximo de 1,50 €. */
     private suspend fun addAlert() =
-        alerts.add(PriceAlert(stationId = "1", stationName = "REPSOL", provinceId = "28", fuel = FuelType.GASOLINE_95, maxPrice = 1.5))
+        alerts.save(PriceAlert(stationId = "1", stationName = "REPSOL", provinceId = "28", fuel = FuelType.GASOLINE_95, maxPrice = 1.5))
 
     /** Debe avisar solo al bajar del máximo y no repetir el aviso en cada comprobación. */
     @Test
@@ -69,7 +69,7 @@ class AlertsViewModelTest {
     fun `crear y borrar una alerta`() = runTest(mainRule.dispatcher) {
         stations.refreshAll()
         val detail = DetailViewModel("1", stations, alerts)
-        val viewModel = AlertsViewModel(alerts)
+        val viewModel = AlertsViewModel(alerts, stations)
         detail.uiState.launchIn(backgroundScope)
         viewModel.uiState.launchIn(backgroundScope)
 
@@ -80,6 +80,27 @@ class AlertsViewModelTest {
 
         viewModel.delete(alert.id)
         assertTrue(viewModel.uiState.value.alerts.isEmpty())
+    }
+
+    /** Editar debe cambiar los datos, conservar la alerta y rearmarla; un precio inválido no debe tocarla. */
+    @Test
+    fun `editar una alerta`() = runTest(mainRule.dispatcher) {
+        addAlert()
+        checkWithPrice("1,400")
+        val viewModel = AlertsViewModel(alerts, stations)
+        viewModel.uiState.launchIn(backgroundScope)
+        val original = viewModel.uiState.value.alerts.single()
+        assertTrue(original.notified)
+
+        assertFalse(viewModel.update(original, FuelType.DIESEL, "65"))
+        assertEquals(original, viewModel.uiState.value.alerts.single())
+
+        assertTrue(viewModel.update(original, FuelType.DIESEL, "1,3"))
+        val edited = viewModel.uiState.value.alerts.single()
+        assertEquals(original.id, edited.id)
+        assertEquals(FuelType.DIESEL, edited.fuel)
+        assertEquals(1.3, edited.maxPrice, 0.0)
+        assertFalse(edited.notified)
     }
 
     /** Un euro no debe leerse como mil: "1,000" parece un millar en español. */

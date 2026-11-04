@@ -11,9 +11,12 @@ import kotlinx.coroutines.flow.Flow
 // Ningún carburante se acerca a este precio: algo mayor es una errata, como escribir 65 en vez de 1,65.
 private const val MAX_ALERT_PRICE = 10.0
 
+/** Convierte el precio escrito por el usuario, o devuelve null si no es válido. */
+fun parseAlertPrice(text: String): Double? = parsePrice(text)?.takeIf { it <= MAX_ALERT_PRICE }
+
 /** Crea una alerta a partir del precio escrito por el usuario, o devuelve null si no es válido. */
 fun priceAlertFor(station: Station, fuel: FuelType, maxPriceText: String): PriceAlert? {
-    val maxPrice = parsePrice(maxPriceText)?.takeIf { it <= MAX_ALERT_PRICE } ?: return null
+    val maxPrice = parseAlertPrice(maxPriceText) ?: return null
     return PriceAlert(
         stationId = station.id,
         stationName = "${station.brand} (${station.locality})",
@@ -33,8 +36,8 @@ class AlertRepository(
 ) {
     val alerts: Flow<List<PriceAlert>> = dao.observeAll()
 
-    /** Guarda una alerta nueva. */
-    suspend fun add(alert: PriceAlert) = dao.upsert(alert)
+    /** Guarda una alerta, nueva o editada. */
+    suspend fun save(alert: PriceAlert) = dao.upsert(alert)
 
     /** Borra una alerta. */
     suspend fun delete(id: Long) = dao.delete(id)

@@ -67,7 +67,7 @@ class DetailViewModel(
     fun createAlert(fuel: FuelType, maxPriceText: String): Boolean {
         val station = uiState.value.station ?: return false
         val alert = priceAlertFor(station, fuel, maxPriceText) ?: return false
-        viewModelScope.launch { alerts.add(alert) }
+        viewModelScope.launch { alerts.save(alert) }
         return true
     }
 

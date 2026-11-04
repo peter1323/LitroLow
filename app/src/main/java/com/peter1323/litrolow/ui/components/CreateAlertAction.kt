@@ -5,6 +5,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardOptions
@@ -49,24 +50,29 @@ fun CreateAlertAction(
             showDialog = true
         }
     }
-    if (showDialog) CreateAlertDialog(soldFuels, onCreate) { showDialog = false }
+    if (showDialog) {
+        AlertFormDialog(R.string.create_alert, soldFuels, onSave = onCreate, onDismiss = { showDialog = false })
+    }
 }
 
-/** Diálogo para elegir el combustible y el precio máximo de la alerta. */
+/** Diálogo para elegir el combustible y el precio máximo; sirve para crear y para editar una alerta. */
 @Composable
-private fun CreateAlertDialog(
+fun AlertFormDialog(
+    @StringRes title: Int,
     fuels: List<FuelType>,
-    onCreate: (FuelType, String) -> Boolean,
+    initialFuel: FuelType = fuels.first(),
+    initialPrice: String = "",
+    onSave: (FuelType, String) -> Boolean,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    var fuel by rememberSaveable { mutableStateOf(fuels.first()) }
-    var maxPrice by rememberSaveable { mutableStateOf("") }
+    var fuel by rememberSaveable { mutableStateOf(initialFuel) }
+    var maxPrice by rememberSaveable { mutableStateOf(initialPrice) }
     var isInvalid by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.create_alert)) },
+        title = { Text(stringResource(title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FuelChips(fuel, { fuel = it }, fuels = fuels)
@@ -74,6 +80,7 @@ private fun CreateAlertDialog(
                     value = maxPrice,
                     onValueChange = { maxPrice = it; isInvalid = false },
                     label = { Text(stringResource(R.string.alert_max_price)) },
+                    placeholder = { Text(stringResource(R.string.alert_price_example)) },
                     isError = isInvalid,
                     supportingText = { if (isInvalid) Text(stringResource(R.string.alert_invalid_price)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -83,7 +90,7 @@ private fun CreateAlertDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                if (onCreate(fuel, maxPrice)) {
+                if (onSave(fuel, maxPrice)) {
                     Toast.makeText(context, R.string.alert_saved, Toast.LENGTH_SHORT).show()
                     onDismiss()
                 } else {

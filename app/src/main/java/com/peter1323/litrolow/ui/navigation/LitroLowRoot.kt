@@ -136,7 +136,7 @@ private fun AppNavHost(navController: NavHostController, isDark: Boolean, modifi
             FavoritesScreen(viewModel { FavoritesViewModel(app.stationRepository) }, openDetail)
         }
         composable(Tab.ALERTS.route) {
-            AlertsScreen(viewModel { AlertsViewModel(app.alertRepository) }, openDetail)
+            AlertsScreen(viewModel { AlertsViewModel(app.alertRepository, app.stationRepository) }, openDetail)
         }
         composable("detail/{$DETAIL_ARG}") { entry ->
             val stationId = requireNotNull(entry.arguments?.getString(DETAIL_ARG))

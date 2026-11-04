@@ -42,6 +42,8 @@
     <string name="save">Guardar</string>
     <string name="cancel">Cancelar</string>
     <string name="delete_alert">Borrar alerta</string>
+    <string name="edit_alert">Editar alerta</string>
+    <string name="alert_price_example">Por ejemplo, 1,45</string>
     <string name="create_another_alert">Ya tienes una alerta aquí. Crear otra</string>
     <string name="alert_summary">%1$s: avisar a %2$s € o menos</string>
     <string name="empty_alerts">Aún no tienes alertas. Pulsa la campana de una gasolinera para crear una.</string>

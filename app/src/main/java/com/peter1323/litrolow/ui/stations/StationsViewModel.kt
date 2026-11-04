@@ -105,7 +105,7 @@ class StationsViewModel(
     /** Crea una alerta desde la lista. Devuelve false si el precio no es válido, para que el diálogo lo indique. */
     fun createAlert(station: Station, fuel: FuelType, maxPriceText: String): Boolean {
         val alert = priceAlertFor(station, fuel, maxPriceText) ?: return false
-        viewModelScope.launch { alerts.add(alert) }
+        viewModelScope.launch { alerts.save(alert) }
         return true
     }
 
