@@ -8,8 +8,8 @@ import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.data.model.filterAndSort
 import com.peter1323.litrolow.data.model.popularBrands
 import com.peter1323.litrolow.data.repository.AlertRepository
+import com.peter1323.litrolow.data.repository.AlertSaveResult
 import com.peter1323.litrolow.data.repository.StationRepository
-import com.peter1323.litrolow.data.repository.priceAlertFor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,12 +102,9 @@ class StationsViewModel(
         viewModelScope.launch { repository.setFavorite(stationId, !isFavorite) }
     }
 
-    /** Crea una alerta desde la lista. Devuelve false si el precio no es válido, para que el diálogo lo indique. */
-    fun createAlert(station: Station, fuel: FuelType, maxPriceText: String): Boolean {
-        val alert = priceAlertFor(station, fuel, maxPriceText) ?: return false
-        viewModelScope.launch { alerts.save(alert) }
-        return true
-    }
+    /** Crea una alerta desde la lista y devuelve el resultado para que el diálogo lo explique. */
+    suspend fun createAlert(station: Station, fuel: FuelType, maxPriceText: String): AlertSaveResult =
+        alerts.create(station, fuel, maxPriceText)
 
     /** Ejecuta una descarga reflejando en el estado que está en curso y cómo termina. */
     private fun load(download: suspend () -> LoadError?) {

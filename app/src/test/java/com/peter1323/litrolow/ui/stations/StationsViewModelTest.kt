@@ -5,6 +5,7 @@ import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.data.repository.AlertRepository
+import com.peter1323.litrolow.data.repository.AlertSaveResult
 import com.peter1323.litrolow.data.repository.StationRepository
 import com.peter1323.litrolow.testutil.FakeAlertDao
 import com.peter1323.litrolow.testutil.FakeApi
@@ -50,10 +51,10 @@ class StationsViewModelTest {
     fun `crea alerta desde la lista`() = runTest(mainRule.dispatcher) {
         val viewModel = viewModelWith(station("1"))
         viewModel.uiState.launchIn(backgroundScope)
-        assertFalse(viewModel.createAlert(station("1"), FuelType.GASOLINE_95, "abc"))
+        assertEquals(AlertSaveResult.INVALID_PRICE, viewModel.createAlert(station("1"), FuelType.GASOLINE_95, "abc"))
         assertTrue(viewModel.uiState.value.stationIdsWithAlert.isEmpty())
 
-        assertTrue(viewModel.createAlert(station("1"), FuelType.GASOLINE_95, "1,45"))
+        assertEquals(AlertSaveResult.SAVED, viewModel.createAlert(station("1"), FuelType.GASOLINE_95, "1,45"))
         assertEquals(setOf("1"), viewModel.uiState.value.stationIdsWithAlert)
     }
 

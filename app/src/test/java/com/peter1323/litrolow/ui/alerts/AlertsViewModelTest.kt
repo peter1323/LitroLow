@@ -5,11 +5,13 @@ import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.PriceAlert
 import com.peter1323.litrolow.data.repository.AlertRepository
+import com.peter1323.litrolow.data.repository.AlertSaveResult
 import com.peter1323.litrolow.data.repository.StationRepository
 import com.peter1323.litrolow.testutil.FakeAlertDao
 import com.peter1323.litrolow.testutil.FakeApi
 import com.peter1323.litrolow.testutil.FakeStationDao
 import com.peter1323.litrolow.testutil.MainDispatcherRule
+import com.peter1323.litrolow.testutil.station
 import com.peter1323.litrolow.testutil.stationDto
 import com.peter1323.litrolow.ui.components.formatAlertPrice
 import com.peter1323.litrolow.ui.detail.DetailViewModel
@@ -41,7 +43,7 @@ class AlertsViewModelTest {
 
     /** Crea una alerta de Gasolina 95 con máximo de 1,50 €. */
     private suspend fun addAlert() =
-        alerts.save(PriceAlert(stationId = "1", stationName = "REPSOL", provinceId = "28", fuel = FuelType.GASOLINE_95, maxPrice = 1.5))
+        alertDao.upsert(PriceAlert(stationId = "1", stationName = "REPSOL", provinceId = "28", fuel = FuelType.GASOLINE_95, maxPrice = 1.5))
 
     /** Debe avisar solo al bajar del máximo y no repetir el aviso en cada comprobación. */
     @Test
@@ -73,10 +75,10 @@ class AlertsViewModelTest {
         detail.uiState.launchIn(backgroundScope)
         viewModel.uiState.launchIn(backgroundScope)
 
-        assertTrue(detail.createAlert(FuelType.GASOLINE_95, "1,45"))
+        assertEquals(AlertSaveResult.SAVED, detail.createAlert(station("1"), FuelType.GASOLINE_95, "1,45"))
         val alert = viewModel.uiState.value.alerts.single()
         assertEquals(1.45, alert.maxPrice, 0.0)
-        assertEquals("REPSOL ()", alert.stationName)
+        assertEquals("REPSOL (MADRID)", alert.stationName)
 
         viewModel.delete(alert.id)
         assertTrue(viewModel.uiState.value.alerts.isEmpty())
@@ -92,15 +94,38 @@ class AlertsViewModelTest {
         val original = viewModel.uiState.value.alerts.single()
         assertTrue(original.notified)
 
-        assertFalse(viewModel.update(original, FuelType.DIESEL, "65"))
+        assertEquals(AlertSaveResult.INVALID_PRICE, viewModel.update(original, FuelType.DIESEL, "65"))
         assertEquals(original, viewModel.uiState.value.alerts.single())
 
-        assertTrue(viewModel.update(original, FuelType.DIESEL, "1,3"))
+        assertEquals(AlertSaveResult.SAVED, viewModel.update(original, FuelType.DIESEL, "1,3"))
         val edited = viewModel.uiState.value.alerts.single()
         assertEquals(original.id, edited.id)
         assertEquals(FuelType.DIESEL, edited.fuel)
         assertEquals(1.3, edited.maxPrice, 0.0)
         assertFalse(edited.notified)
+    }
+
+    /** Misma gasolinera, combustible y precio no debe repetirse, escrito como se escriba; con otro precio sí vale. */
+    @Test
+    fun `no permite alertas duplicadas`() = runTest(mainRule.dispatcher) {
+        val station = station("1")
+        assertEquals(AlertSaveResult.SAVED, alerts.create(station, FuelType.GASOLINE_95, "1,50"))
+        assertEquals(AlertSaveResult.DUPLICATE, alerts.create(station, FuelType.GASOLINE_95, "1,5"))
+        assertEquals(AlertSaveResult.SAVED, alerts.create(station, FuelType.GASOLINE_95, "1,40"))
+        assertEquals(AlertSaveResult.SAVED, alerts.create(station, FuelType.DIESEL, "1,50"))
+        assertEquals(AlertSaveResult.SAVED, alerts.create(station("2"), FuelType.GASOLINE_95, "1,50"))
+        assertEquals(4, alertDao.alerts.value.size)
+    }
+
+    /** Al editar, una alerta no choca consigo misma, pero no puede convertirse en copia de otra. */
+    @Test
+    fun `editar no permite crear un duplicado`() = runTest(mainRule.dispatcher) {
+        alerts.create(station("1"), FuelType.GASOLINE_95, "1,50")
+        alerts.create(station("1"), FuelType.GASOLINE_95, "1,40")
+        val second = alertDao.alerts.value.last()
+        assertEquals(AlertSaveResult.SAVED, alerts.update(second, second.fuel, "1,40"))
+        assertEquals(AlertSaveResult.DUPLICATE, alerts.update(second, second.fuel, "1,50"))
+        assertEquals(1.4, alertDao.alerts.value.last().maxPrice, 0.0)
     }
 
     /** Un euro no debe leerse como mil: "1,000" parece un millar en español. */
@@ -117,11 +142,11 @@ class AlertsViewModelTest {
         stations.refreshAll()
         val detail = DetailViewModel("1", stations, alerts)
         detail.uiState.launchIn(backgroundScope)
-        assertFalse(detail.createAlert(FuelType.GASOLINE_95, ""))
-        assertFalse(detail.createAlert(FuelType.GASOLINE_95, "abc"))
-        assertFalse(detail.createAlert(FuelType.GASOLINE_95, "0"))
-        assertFalse(detail.createAlert(FuelType.GASOLINE_95, "65"))
-        assertFalse(detail.createAlert(FuelType.GASOLINE_95, "10,01"))
+        assertEquals(AlertSaveResult.INVALID_PRICE, detail.createAlert(station("1"), FuelType.GASOLINE_95, ""))
+        assertEquals(AlertSaveResult.INVALID_PRICE, detail.createAlert(station("1"), FuelType.GASOLINE_95, "abc"))
+        assertEquals(AlertSaveResult.INVALID_PRICE, detail.createAlert(station("1"), FuelType.GASOLINE_95, "0"))
+        assertEquals(AlertSaveResult.INVALID_PRICE, detail.createAlert(station("1"), FuelType.GASOLINE_95, "65"))
+        assertEquals(AlertSaveResult.INVALID_PRICE, detail.createAlert(station("1"), FuelType.GASOLINE_95, "10,01"))
         assertTrue(alertDao.alerts.value.isEmpty())
     }
 }

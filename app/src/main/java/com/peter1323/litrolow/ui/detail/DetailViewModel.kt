@@ -6,8 +6,8 @@ import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.PricePoint
 import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.data.repository.AlertRepository
+import com.peter1323.litrolow.data.repository.AlertSaveResult
 import com.peter1323.litrolow.data.repository.StationRepository
-import com.peter1323.litrolow.data.repository.priceAlertFor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -60,16 +60,9 @@ class DetailViewModel(
         chartFuel.value = fuel
     }
 
-    /**
-     * Crea una alerta a partir del texto escrito por el usuario. Devuelve false si el precio no es
-     * válido, para que la pantalla lo indique sin cerrar el diálogo.
-     */
-    fun createAlert(fuel: FuelType, maxPriceText: String): Boolean {
-        val station = uiState.value.station ?: return false
-        val alert = priceAlertFor(station, fuel, maxPriceText) ?: return false
-        viewModelScope.launch { alerts.save(alert) }
-        return true
-    }
+    /** Crea una alerta en esta gasolinera y devuelve el resultado para que el diálogo lo explique. */
+    suspend fun createAlert(station: Station, fuel: FuelType, maxPriceText: String): AlertSaveResult =
+        alerts.create(station, fuel, maxPriceText)
 
     /** Se queda con los registros que tienen precio para ese combustible. */
     private fun List<PricePoint>.toChartPoints(fuel: FuelType): List<ChartPoint> =

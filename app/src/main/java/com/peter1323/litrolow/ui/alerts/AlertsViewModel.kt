@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.PriceAlert
 import com.peter1323.litrolow.data.repository.AlertRepository
+import com.peter1323.litrolow.data.repository.AlertSaveResult
 import com.peter1323.litrolow.data.repository.StationRepository
-import com.peter1323.litrolow.data.repository.parseAlertPrice
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -39,13 +39,7 @@ class AlertsViewModel(
         viewModelScope.launch { repository.delete(id) }
     }
 
-    /**
-     * Guarda los cambios de una alerta y la rearma para que vuelva a avisar con el nuevo precio.
-     * Devuelve false si el precio no es válido, para que el diálogo lo indique.
-     */
-    fun update(alert: PriceAlert, fuel: FuelType, maxPriceText: String): Boolean {
-        val maxPrice = parseAlertPrice(maxPriceText) ?: return false
-        viewModelScope.launch { repository.save(alert.copy(fuel = fuel, maxPrice = maxPrice, notified = false)) }
-        return true
-    }
+    /** Guarda los cambios de una alerta y devuelve el resultado para que el diálogo lo explique. */
+    suspend fun update(alert: PriceAlert, fuel: FuelType, maxPriceText: String): AlertSaveResult =
+        repository.update(alert, fuel, maxPriceText)
 }

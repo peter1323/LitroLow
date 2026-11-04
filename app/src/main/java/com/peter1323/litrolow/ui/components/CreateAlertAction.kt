@@ -16,6 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.data.repository.AlertSaveResult
+import kotlinx.coroutines.launch
 
 /**
  * Acción de crear una alerta; [trigger] dibuja el botón que la lanza. Pide el permiso de notificaciones justo en este momento, porque es
@@ -33,8 +36,8 @@ import com.peter1323.litrolow.data.model.Station
 @Composable
 fun CreateAlertAction(
     station: Station,
-    onCreate: (FuelType, String) -> Boolean,
-    trigger: @Composable (onClick: () -> Unit) -> Unit,
+    onCreate: suspend (FuelType, String) -> AlertSaveResult,
+    trigger:@Composable (onClick: () -> Unit) -> Unit,
 ) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -55,6 +58,11 @@ fun CreateAlertAction(
     }
 }
 
+/** Texto que explica por qué no se ha podido guardar una alerta. */
+@get:StringRes
+private val AlertSaveResult.message: Int
+    get() = if (this == AlertSaveResult.DUPLICATE) R.string.alert_duplicate else R.string.alert_invalid_price
+
 /** Diálogo para elegir el combustible y el precio máximo; sirve para crear y para editar una alerta. */
 @Composable
 fun AlertFormDialog(
@@ -62,39 +70,43 @@ fun AlertFormDialog(
     fuels: List<FuelType>,
     initialFuel: FuelType = fuels.first(),
     initialPrice: String = "",
-    onSave: (FuelType, String) -> Boolean,
+    onSave: suspend (FuelType, String) -> AlertSaveResult,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var fuel by rememberSaveable { mutableStateOf(initialFuel) }
     var maxPrice by rememberSaveable { mutableStateOf(initialPrice) }
-    var isInvalid by rememberSaveable { mutableStateOf(false) }
+    var problem by rememberSaveable { mutableStateOf<AlertSaveResult?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                FuelChips(fuel, { fuel = it }, fuels = fuels)
+                FuelChips(fuel, { fuel = it; problem = null }, fuels = fuels)
                 OutlinedTextField(
                     value = maxPrice,
-                    onValueChange = { maxPrice = it; isInvalid = false },
+                    onValueChange = { maxPrice = it; problem = null },
                     label = { Text(stringResource(R.string.alert_max_price)) },
                     placeholder = { Text(stringResource(R.string.alert_price_example)) },
-                    isError = isInvalid,
-                    supportingText = { if (isInvalid) Text(stringResource(R.string.alert_invalid_price)) },
+                    isError = problem != null,
+                    supportingText = { problem?.let { Text(stringResource(it.message)) } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                 )
-        }
+            }
         },
         confirmButton = {
             TextButton(onClick = {
-                if (onSave(fuel, maxPrice)) {
-                    Toast.makeText(context, R.string.alert_saved, Toast.LENGTH_SHORT).show()
-                    onDismiss()
-                } else {
-                    isInvalid = true
+                scope.launch {
+                    val result = onSave(fuel, maxPrice)
+                    if (result == AlertSaveResult.SAVED) {
+                        Toast.makeText(context, R.string.alert_saved, Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    } else {
+                        problem = result
+                    }
                 }
             }) { Text(stringResource(R.string.save)) }
         },

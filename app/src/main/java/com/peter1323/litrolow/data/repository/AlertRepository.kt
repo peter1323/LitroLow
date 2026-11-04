@@ -7,24 +7,14 @@ import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.PriceAlert
 import com.peter1323.litrolow.data.model.Station
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 // Ningún carburante se acerca a este precio: algo mayor es una errata, como escribir 65 en vez de 1,65.
 private const val MAX_ALERT_PRICE = 10.0
 
-/** Convierte el precio escrito por el usuario, o devuelve null si no es válido. */
-fun parseAlertPrice(text: String): Double? = parsePrice(text)?.takeIf { it <= MAX_ALERT_PRICE }
-
-/** Crea una alerta a partir del precio escrito por el usuario, o devuelve null si no es válido. */
-fun priceAlertFor(station: Station, fuel: FuelType, maxPriceText: String): PriceAlert? {
-    val maxPrice = parseAlertPrice(maxPriceText) ?: return null
-    return PriceAlert(
-        stationId = station.id,
-        stationName = "${station.brand} (${station.locality})",
-        provinceId = station.provinceId,
-        fuel = fuel,
-        maxPrice = maxPrice,
-    )
-}
+/** Resultado de intentar guardar una alerta; el diálogo muestra un mensaje para cada problema. */
+enum class AlertSaveResult { SAVED, INVALID_PRICE, DUPLICATE }
 
 /** Alerta que acaba de cumplirse, junto con el precio que la ha disparado. */
 data class TriggeredAlert(val alert: PriceAlert, val price: Double)
@@ -34,10 +24,43 @@ class AlertRepository(
     private val dao: AlertDao,
     private val stations: StationRepository,
 ) {
+    // Evita que una doble pulsación en «Guardar» pase la comprobación de duplicados dos veces a la vez.
+    private val saveLock = Mutex()
+
     val alerts: Flow<List<PriceAlert>> = dao.observeAll()
 
-    /** Guarda una alerta, nueva o editada. */
-    suspend fun save(alert: PriceAlert) = dao.upsert(alert)
+    /** Crea una alerta a partir del precio escrito por el usuario. */
+    suspend fun create(station: Station, fuel: FuelType, maxPriceText: String): AlertSaveResult =
+        saveChecked(maxPriceText) { maxPrice ->
+            PriceAlert(
+                stationId = station.id,
+                stationName = "${station.brand} (${station.locality})",
+                provinceId = station.provinceId,
+                fuel = fuel,
+                maxPrice = maxPrice,
+            )
+        }
+
+    /** Guarda los cambios de una alerta y la rearma para que vuelva a avisar con el nuevo precio. */
+    suspend fun update(alert: PriceAlert, fuel: FuelType, maxPriceText: String): AlertSaveResult =
+        saveChecked(maxPriceText) { maxPrice -> alert.copy(fuel = fuel, maxPrice = maxPrice, notified = false) }
+
+    /** Valida el precio y guarda salvo que ya exista otra alerta igual, que solo repetiría el mismo aviso. */
+    private suspend fun saveChecked(maxPriceText: String, build: (Double) -> PriceAlert): AlertSaveResult {
+        val maxPrice = parsePrice(maxPriceText)?.takeIf { it <= MAX_ALERT_PRICE } ?: return AlertSaveResult.INVALID_PRICE
+        val alert = build(maxPrice)
+        return saveLock.withLock {
+            val isDuplicate = dao.getAll().any {
+                it.id != alert.id && it.stationId == alert.stationId && it.fuel == alert.fuel && it.maxPrice == maxPrice
+            }
+            if (isDuplicate) {
+                AlertSaveResult.DUPLICATE
+            } else {
+                dao.upsert(alert)
+                AlertSaveResult.SAVED
+            }
+        }
+    }
 
     /** Borra una alerta. */
     suspend fun delete(id: Long) = dao.delete(id)

@@ -52,7 +52,7 @@ fun DetailScreen(viewModel: DetailViewModel) {
             Header(station, state.isFavorite, viewModel::toggleFavorite)
             Prices(station)
             RouteButton(station)
-            CreateAlertAction(station, viewModel::createAlert) { onClick ->
+            CreateAlertAction(station, { fuel, price -> viewModel.createAlert(station, fuel, price) }) { onClick ->
                 OutlinedButton(onClick, Modifier.fillMaxWidth()) { Text(stringResource(R.string.create_alert)) }
             }
             Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleMedium)
