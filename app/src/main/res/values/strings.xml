@@ -33,7 +33,7 @@
     <string name="history_title">Evolución del precio</string>
     <string name="history_not_enough">Todavía no hay datos suficientes. La gráfica se irá completando cuando este precio cambie entre consultas.</string>
     <string name="no_maps_app">No hay ninguna app de mapas instalada.</string>
-    <string name="empty_favorites">Aún no tienes favoritas. Abre una gasolinera y pulsa el corazón para guardarla.</string>
+    <string name="empty_favorites">Aún no tienes favoritas. Pulsa el corazón de una gasolinera para guardarla.</string>
 
     <string name="create_alert">Crear alerta de precio</string>
     <string name="alert_max_price">Avísame si baja de (€/litro)</string>
@@ -42,8 +42,9 @@
     <string name="save">Guardar</string>
     <string name="cancel">Cancelar</string>
     <string name="delete_alert">Borrar alerta</string>
+    <string name="create_another_alert">Ya tienes una alerta aquí. Crear otra</string>
     <string name="alert_summary">%1$s: avisar a %2$s o menos</string>
-    <string name="empty_alerts">Aún no tienes alertas. Abre una gasolinera y pulsa «Crear alerta de precio».</string>
+    <string name="empty_alerts">Aún no tienes alertas. Pulsa la campana de una gasolinera para crear una.</string>
     <string name="notifications_off">Las notificaciones están desactivadas: actívalas en los ajustes del móvil para recibir estas alertas.</string>
     <string name="alert_channel_name">Alertas de precio</string>
     <string name="alert_notification_title">¡Precio bajo en %1$s!</string>

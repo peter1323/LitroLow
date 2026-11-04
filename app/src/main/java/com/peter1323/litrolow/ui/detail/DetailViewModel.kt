@@ -2,13 +2,12 @@ package com.peter1323.litrolow.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.peter1323.litrolow.data.api.parsePrice
 import com.peter1323.litrolow.data.model.FuelType
-import com.peter1323.litrolow.data.model.PriceAlert
 import com.peter1323.litrolow.data.model.PricePoint
 import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.data.repository.AlertRepository
 import com.peter1323.litrolow.data.repository.StationRepository
+import com.peter1323.litrolow.data.repository.priceAlertFor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -67,18 +66,8 @@ class DetailViewModel(
      */
     fun createAlert(fuel: FuelType, maxPriceText: String): Boolean {
         val station = uiState.value.station ?: return false
-        val maxPrice = parsePrice(maxPriceText) ?: return false
-        viewModelScope.launch {
-            alerts.add(
-                PriceAlert(
-                    stationId = station.id,
-                    stationName = "${station.brand} (${station.locality})",
-                    provinceId = station.provinceId,
-                    fuel = fuel,
-                    maxPrice = maxPrice,
-                ),
-            )
-        }
+        val alert = priceAlertFor(station, fuel, maxPriceText) ?: return false
+        viewModelScope.launch { alerts.add(alert) }
         return true
     }
 

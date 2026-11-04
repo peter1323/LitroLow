@@ -10,10 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,6 +27,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
+import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.ui.components.CreateAlertAction
+import com.peter1323.litrolow.ui.components.FavoriteButton
 import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
@@ -49,7 +54,7 @@ fun StationsScreen(viewModel: StationsViewModel, onStationClick: (String) -> Uni
             Column(Modifier.fillMaxSize()) {
                 Filters(state, query, viewModel)
                 state.error?.let { SavedDataNotice(stringResource(it.message)) }
-                StationList(state, onStationClick)
+                StationList(state, viewModel, onStationClick)
             }
         }
     }
@@ -97,9 +102,23 @@ private fun SavedDataNotice(error: String) {
     )
 }
 
+/** Botón de alerta de una tarjeta; se colorea si esa gasolinera ya tiene alguna alerta. */
+@Composable
+private fun AlertIconButton(station: Station, hasAlert: Boolean, viewModel: StationsViewModel) {
+    CreateAlertAction(station, { fuel, price -> viewModel.createAlert(station, fuel, price) }) { onClick ->
+        IconButton(onClick) {
+            Icon(
+                Icons.Default.Notifications,
+                stringResource(if (hasAlert) R.string.create_another_alert else R.string.create_alert),
+                tint = if (hasAlert) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 /** Lista de gasolineras, o un mensaje si los filtros no dejan ninguna. */
 @Composable
-private fun StationList(state: StationsUiState, onStationClick: (String) -> Unit) {
+private fun StationList(state: StationsUiState, viewModel: StationsViewModel, onStationClick: (String) -> Unit) {
     if (state.stations.isEmpty()) {
         MessageView(stringResource(R.string.empty_stations))
         return
@@ -109,7 +128,10 @@ private fun StationList(state: StationsUiState, onStationClick: (String) -> Unit
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(state.stations, key = { it.id }) { station ->
-            StationCard(station, { onStationClick(station.id) }, highlightedFuel = state.fuel)
+            StationCard(station, { onStationClick(station.id) }, highlightedFuel = state.fuel) {
+                FavoriteButton(station.id in state.favoriteIds) { viewModel.toggleFavorite(station.id) }
+                AlertIconButton(station, station.id in state.stationIdsWithAlert, viewModel)
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** Estado de la pantalla de favoritas. */
 data class FavoritesUiState(
@@ -15,9 +16,14 @@ data class FavoritesUiState(
     val stations: List<Station> = emptyList(),
 )
 
-/** Expone las gasolineras que el usuario ha guardado como favoritas. */
-class FavoritesViewModel(repository: StationRepository) : ViewModel() {
+/** Expone las gasolineras que el usuario ha guardado como favoritas y permite quitarlas. */
+class FavoritesViewModel(private val repository: StationRepository) : ViewModel() {
     val uiState: StateFlow<FavoritesUiState> = repository.favorites
         .map { FavoritesUiState(isLoading = false, stations = it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FavoritesUiState())
+
+    /** Quita una gasolinera de favoritas. */
+    fun remove(stationId: String) {
+        viewModelScope.launch { repository.setFavorite(stationId, false) }
+    }
 }

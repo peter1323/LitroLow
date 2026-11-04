@@ -6,15 +6,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -103,19 +109,45 @@ fun FuelChips(
     }
 }
 
-/** Tarjeta de una gasolinera con sus cuatro precios; resalta el combustible indicado. */
+/** Botón de corazón para marcar o quitar una favorita; se comparte entre la lista y el detalle. */
+@Composable
+fun FavoriteButton(isFavorite: Boolean, onToggle: () -> Unit) {
+    IconButton(onClick = onToggle) {
+        Icon(
+            if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            stringResource(if (isFavorite) R.string.remove_favorite else R.string.add_favorite),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/**
+ * Tarjeta de una gasolinera con su marca y sus cuatro precios; resalta el combustible indicado.
+ * [actions] añade botones a la cabecera, para actuar sin entrar en el detalle.
+ */
 @Composable
 fun StationCard(
     station: Station,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     highlightedFuel: FuelType? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
-            Text(station.brand, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BrandBadge(station.brand)
+                Text(
+                    station.brand,
+                    Modifier.weight(1f).padding(start = 12.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                actions()
+            }
             Text(
                 "${station.address} · ${station.locality}",
+                Modifier.padding(top = 8.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

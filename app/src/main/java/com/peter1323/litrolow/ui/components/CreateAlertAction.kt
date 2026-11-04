@@ -1,4 +1,4 @@
-package com.peter1323.litrolow.ui.detail
+package com.peter1323.litrolow.ui.components
 
 import android.Manifest
 import android.os.Build
@@ -7,10 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -27,14 +24,17 @@ import androidx.compose.ui.unit.dp
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.Station
-import com.peter1323.litrolow.ui.components.FuelChips
 
 /**
- * Botón para crear una alerta. Pide el permiso de notificaciones justo en este momento, porque es
+ * Acción de crear una alerta; [trigger] dibuja el botón que la lanza. Pide el permiso de notificaciones justo en este momento, porque es
  * cuando el usuario entiende para qué sirve, y crea la alerta aunque lo rechace: puede activarlo luego.
  */
 @Composable
-fun CreateAlertButton(station: Station, onCreate: (FuelType, String) -> Boolean) {
+fun CreateAlertAction(
+    station: Station,
+    onCreate: (FuelType, String) -> Boolean,
+    trigger: @Composable (onClick: () -> Unit) -> Unit,
+) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         showDialog = true
@@ -42,17 +42,12 @@ fun CreateAlertButton(station: Station, onCreate: (FuelType, String) -> Boolean)
     val soldFuels = FuelType.entries.filter { station.prices.of(it) != null }
     if (soldFuels.isEmpty()) return
 
-    OutlinedButton(
-        onClick = {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                showDialog = true
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text(stringResource(R.string.create_alert))
+    trigger {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            showDialog = true
+        }
     }
     if (showDialog) CreateAlertDialog(soldFuels, onCreate) { showDialog = false }
 }
@@ -84,7 +79,7 @@ private fun CreateAlertDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                 )
-            }
+        }
         },
         confirmButton = {
             TextButton(onClick = {

@@ -120,7 +120,7 @@ private fun AppNavHost(navController: NavHostController, isDark: Boolean, modifi
     val openDetail: (String) -> Unit = { navController.navigate("detail/$it") }
     NavHost(navController, startDestination = Tab.STATIONS.route, modifier = modifier) {
         composable(Tab.STATIONS.route) {
-            StationsScreen(viewModel { StationsViewModel(app.stationRepository) }, openDetail)
+            StationsScreen(viewModel { StationsViewModel(app.stationRepository, app.alertRepository) }, openDetail)
         }
         composable(Tab.MAP.route) {
             val mapViewModel = viewModel {

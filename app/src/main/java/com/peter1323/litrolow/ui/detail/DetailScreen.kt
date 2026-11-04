@@ -13,13 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +30,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.ui.components.CreateAlertAction
+import com.peter1323.litrolow.ui.components.FavoriteButton
 import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
@@ -54,7 +52,9 @@ fun DetailScreen(viewModel: DetailViewModel) {
             Header(station, state.isFavorite, viewModel::toggleFavorite)
             Prices(station)
             RouteButton(station)
-            CreateAlertButton(station, viewModel::createAlert)
+            CreateAlertAction(station, viewModel::createAlert) { onClick ->
+                OutlinedButton(onClick, Modifier.fillMaxWidth()) { Text(stringResource(R.string.create_alert)) }
+            }
             Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleMedium)
             FuelChips(state.chartFuel, viewModel::selectChartFuel)
             PriceHistoryChart(state.chartPoints)
@@ -72,13 +72,7 @@ private fun Header(station: Station, isFavorite: Boolean, onToggleFavorite: () -
             Text("${station.locality} (${station.province})")
             Text(stringResource(R.string.schedule_format, station.schedule), Modifier.padding(top = 8.dp))
         }
-        IconButton(onClick = onToggleFavorite) {
-            Icon(
-                if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                stringResource(if (isFavorite) R.string.remove_favorite else R.string.add_favorite),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
+        FavoriteButton(isFavorite, onToggleFavorite)
     }
 }
 

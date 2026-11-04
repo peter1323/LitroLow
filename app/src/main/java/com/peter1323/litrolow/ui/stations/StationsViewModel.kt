@@ -7,7 +7,9 @@ import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.data.model.filterAndSort
 import com.peter1323.litrolow.data.model.popularBrands
+import com.peter1323.litrolow.data.repository.AlertRepository
 import com.peter1323.litrolow.data.repository.StationRepository
+import com.peter1323.litrolow.data.repository.priceAlertFor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,11 +30,14 @@ data class StationsUiState(
     val brands: List<String> = emptyList(),
     val selectedBrand: String? = null,
     val fuel: FuelType = FuelType.GASOLINE_95,
+    val favoriteIds: Set<String> = emptySet(),
+    val stationIdsWithAlert: Set<String> = emptySet(),
 )
 
-/** Carga las gasolineras y aplica los filtros que elige el usuario. */
+/** Carga las gasolineras, aplica los filtros y permite marcar favoritas y crear alertas desde la lista. */
 class StationsViewModel(
     private val repository: StationRepository,
+    private val alerts: AlertRepository,
     filterDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val brand = MutableStateFlow<String?>(null)
@@ -47,9 +52,15 @@ class StationsViewModel(
     private val filters = combine(brand, fuel, query) { brand, fuel, query -> Triple(brand, fuel, query) }
     private val status = combine(isRefreshing, error) { refreshing, error -> refreshing to error }
 
+    private val marks = combine(repository.favorites, alerts.alerts) { favorites, alerts ->
+        favorites.map { it.id }.toSet() to alerts.map { it.stationId }.toSet()
+    }
+
     val uiState: StateFlow<StationsUiState> =
-        combine(repository.stations, filters, status) { stations, (brand, fuel, query), (refreshing, error) ->
+        combine(repository.stations, filters, status, marks) { stations, (brand, fuel, query), (refreshing, error), (favoriteIds, alertIds) ->
             StationsUiState(
+                favoriteIds = favoriteIds,
+                stationIdsWithAlert = alertIds,
                 isLoading = refreshing,
                 error = error,
                 hasSavedData = stations.isNotEmpty(),
@@ -83,6 +94,19 @@ class StationsViewModel(
     /** Actualiza el texto de búsqueda. */
     fun updateQuery(value: String) {
         _query.value = value
+    }
+
+    /** Marca o quita una favorita sin entrar en el detalle. */
+    fun toggleFavorite(stationId: String) {
+        val isFavorite = stationId in uiState.value.favoriteIds
+        viewModelScope.launch { repository.setFavorite(stationId, !isFavorite) }
+    }
+
+    /** Crea una alerta desde la lista. Devuelve false si el precio no es válido, para que el diálogo lo indique. */
+    fun createAlert(station: Station, fuel: FuelType, maxPriceText: String): Boolean {
+        val alert = priceAlertFor(station, fuel, maxPriceText) ?: return false
+        viewModelScope.launch { alerts.add(alert) }
+        return true
     }
 
     /** Ejecuta una descarga reflejando en el estado que está en curso y cómo termina. */

@@ -4,7 +4,9 @@ import com.peter1323.litrolow.data.api.StationsResponse
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.data.repository.AlertRepository
 import com.peter1323.litrolow.data.repository.StationRepository
+import com.peter1323.litrolow.testutil.FakeAlertDao
 import com.peter1323.litrolow.testutil.FakeApi
 import com.peter1323.litrolow.testutil.FakeStationDao
 import com.peter1323.litrolow.testutil.MainDispatcherRule
@@ -25,8 +27,34 @@ class StationsViewModelTest {
 
     /** Crea el ViewModel con datos ya guardados y recientes, de modo que no descarga nada. */
     private fun viewModelWith(vararg saved: Station): StationsViewModel {
-        val repository = StationRepository(FakeApi(), FakeStationDao(saved.toList()), now = { 0 })
-        return StationsViewModel(repository, mainRule.dispatcher)
+        return viewModelOf(StationRepository(FakeApi(), FakeStationDao(saved.toList()), now = { 0 }))
+    }
+
+    /** Crea el ViewModel con un repositorio concreto y alertas en memoria. */
+    private fun viewModelOf(repository: StationRepository) =
+        StationsViewModel(repository, AlertRepository(FakeAlertDao(), repository), mainRule.dispatcher)
+
+    /** El corazón de la lista debe marcar y desmarcar la favorita al momento. */
+    @Test
+    fun `alterna favorita desde la lista`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(station("1"))
+        viewModel.uiState.launchIn(backgroundScope)
+        viewModel.toggleFavorite("1")
+        assertEquals(setOf("1"), viewModel.uiState.value.favoriteIds)
+        viewModel.toggleFavorite("1")
+        assertTrue(viewModel.uiState.value.favoriteIds.isEmpty())
+    }
+
+    /** La alerta creada desde la lista debe reflejarse en su tarjeta, y un precio inválido no debe crearla. */
+    @Test
+    fun `crea alerta desde la lista`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(station("1"))
+        viewModel.uiState.launchIn(backgroundScope)
+        assertFalse(viewModel.createAlert(station("1"), FuelType.GASOLINE_95, "abc"))
+        assertTrue(viewModel.uiState.value.stationIdsWithAlert.isEmpty())
+
+        assertTrue(viewModel.createAlert(station("1"), FuelType.GASOLINE_95, "1,45"))
+        assertEquals(setOf("1"), viewModel.uiState.value.stationIdsWithAlert)
     }
 
     /** La lista debe salir de más barata a más cara por el combustible elegido. */
@@ -71,7 +99,7 @@ class StationsViewModelTest {
     @Test
     fun `sin internet expone el error`() = runTest(mainRule.dispatcher) {
         val repository = StationRepository(FakeApi(failure = IOException()), FakeStationDao())
-        val viewModel = StationsViewModel(repository, mainRule.dispatcher)
+        val viewModel = viewModelOf(repository)
         viewModel.uiState.launchIn(backgroundScope)
         val state = viewModel.uiState.value
         assertEquals(LoadError.NO_INTERNET, state.error)
@@ -83,7 +111,7 @@ class StationsViewModelTest {
     @Test
     fun `respuesta vacia conserva los datos guardados`() = runTest(mainRule.dispatcher) {
         val api = FakeApi(response = StationsResponse("OK", emptyList()))
-        val viewModel = StationsViewModel(StationRepository(api, FakeStationDao(listOf(station()))), mainRule.dispatcher)
+        val viewModel = viewModelOf(StationRepository(api, FakeStationDao(listOf(station()))))
         viewModel.uiState.launchIn(backgroundScope)
         viewModel.refresh()
         val state = viewModel.uiState.value
@@ -96,7 +124,7 @@ class StationsViewModelTest {
     fun `con datos recientes no descarga`() = runTest(mainRule.dispatcher) {
         val api = FakeApi()
         val dao = FakeStationDao(listOf(station(updatedAt = 1_000)))
-        StationsViewModel(StationRepository(api, dao, now = { 2_000 }), mainRule.dispatcher)
+        viewModelOf(StationRepository(api, dao, now = { 2_000 }))
         assertEquals(0, api.fullDownloads)
             }
 }

@@ -1,9 +1,24 @@
 package com.peter1323.litrolow.data.repository
 
+import com.peter1323.litrolow.data.api.parsePrice
 import com.peter1323.litrolow.data.db.AlertDao
+import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.PriceAlert
+import com.peter1323.litrolow.data.model.Station
 import kotlinx.coroutines.flow.Flow
+
+/** Crea una alerta a partir del precio escrito por el usuario, o devuelve null si no es válido. */
+fun priceAlertFor(station: Station, fuel: FuelType, maxPriceText: String): PriceAlert? {
+    val maxPrice = parsePrice(maxPriceText) ?: return null
+    return PriceAlert(
+        stationId = station.id,
+        stationName = "${station.brand} (${station.locality})",
+        provinceId = station.provinceId,
+        fuel = fuel,
+        maxPrice = maxPrice,
+    )
+}
 
 /** Alerta que acaba de cumplirse, junto con el precio que la ha disparado. */
 data class TriggeredAlert(val alert: PriceAlert, val price: Double)

@@ -24,6 +24,18 @@ class FavoritesViewModelTest {
     private val repository = StationRepository(FakeApi(), FakeStationDao(listOf(station("1"), station("2"))))
     private val alerts = AlertRepository(FakeAlertDao(), repository)
 
+    /** La papelera debe quitar la favorita sin pasar por el detalle. */
+    @Test
+    fun `quitar desde la lista de favoritas`() = runTest(mainRule.dispatcher) {
+        repository.setFavorite("1", true)
+        val favorites = FavoritesViewModel(repository)
+        favorites.uiState.launchIn(backgroundScope)
+        assertEquals(listOf("1"), favorites.uiState.value.stations.map { it.id })
+
+        favorites.remove("1")
+        assertTrue(favorites.uiState.value.stations.isEmpty())
+    }
+
     /** Marcar y desmarcar debe añadir y quitar la gasolinera de la lista. */
     @Test
     fun `alternar favorita actualiza la lista`() = runTest(mainRule.dispatcher) {
