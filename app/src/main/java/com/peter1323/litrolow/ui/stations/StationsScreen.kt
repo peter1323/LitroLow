@@ -11,13 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -26,18 +25,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
@@ -49,15 +49,15 @@ import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
 import com.peter1323.litrolow.ui.components.StationCard
+import com.peter1323.litrolow.ui.components.TankDialog
 import com.peter1323.litrolow.ui.components.formatDecimal
 import com.peter1323.litrolow.ui.components.formatPrice
 import com.peter1323.litrolow.ui.components.message
 import com.peter1323.litrolow.ui.components.selectedChipColors
 import com.peter1323.litrolow.ui.theme.BrandGreen
 import com.peter1323.litrolow.ui.theme.OnBrandGreen
-
-// Solo son atajos: se puede escribir cualquier cantidad válida.
-private val TANK_SHORTCUTS = listOf(30, 40, 50, 60)
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filterNotNull
 
 /** Pantalla principal: la más barata con su ahorro, buscador, filtros y lista de más barata a más cara. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,7 +94,12 @@ private fun CheapestHeader(station: Station, state: StationsUiState, onSave: (St
         Text("${station.brand} · ${stringResource(state.fuel.label)}", style = MaterialTheme.typography.bodyMedium)
         val savings = if (price != null) state.comparison?.savings(price, state.tankLitres) else null
         if (savings == null) {
-            HeaderNote(stringResource(R.string.hero_search_hint))
+            val hint = when {
+                state.zoneName != null -> R.string.hero_single_station
+                state.isFiltered -> R.string.hero_mixed_zones
+                else -> R.string.hero_search_hint
+            }
+            HeaderNote(stringResource(hint))
         } else {
             EditableSavings(formatDecimal(savings, 2), state.tankLitres, onSave)
         }
@@ -123,45 +128,6 @@ private fun HeaderNote(text: String, modifier: Modifier = Modifier, isEditable: 
             if (isEditable) Icon(Icons.Default.Edit, stringResource(R.string.tank_title), Modifier.padding(start = 8.dp))
         }
     }
-}
-
-/** Diálogo para indicar los litros que se suelen echar, con atajos o escribiendo cualquier cantidad. */
-@Composable
-private fun TankDialog(litres: Int, onSave: (String) -> Boolean, onDismiss: () -> Unit) {
-    var text by rememberSaveable { mutableStateOf(litres.toString()) }
-    var isInvalid by rememberSaveable { mutableStateOf(false) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.tank_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.tank_question))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TANK_SHORTCUTS.forEach { shortcut ->
-                        FilterChip(
-                            selected = text == shortcut.toString(),
-                            onClick = { text = shortcut.toString(); isInvalid = false },
-                            label = { Text(shortcut.toString()) },
-                            colors = selectedChipColors(),
-                        )
-                    }
-                }
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it; isInvalid = false },
-                    label = { Text(stringResource(R.string.tank_litres)) },
-                    isError = isInvalid,
-                    supportingText = { if (isInvalid) Text(stringResource(R.string.tank_invalid)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { if (onSave(text)) onDismiss() else isInvalid = true }) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
 }
 
 /** Buscador, chips de combustible y chips de marca. */
@@ -225,8 +191,15 @@ private fun AlertIconButton(station: Station, hasAlert: Boolean, viewModel: Stat
 /** Toda la pantalla se desplaza a la vez para que la cabecera y los filtros no le quiten sitio a la lista. */
 @Composable
 private fun StationList(state: StationsUiState, query: String, viewModel: StationsViewModel, onStationClick: (String) -> Unit) {
+    val listState = rememberLazyListState()
+    val firstStationId by rememberUpdatedState(state.stations.firstOrNull()?.id)
+    // Vuelve arriba solo si cambian los resultados, para ver su ahorro; al volver del detalle se conserva la posición.
+    LaunchedEffect(Unit) {
+        snapshotFlow { firstStationId }.filterNotNull().drop(1).collect { listState.scrollToItem(0) }
+    }
     LazyColumn(
         Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -246,7 +219,7 @@ private fun StationList(state: StationsUiState, query: String, viewModel: Statio
                 { onStationClick(station.id) },
                 Modifier.padding(horizontal = 16.dp),
                 state.fuel,
-                state.comparison,
+                state.comparison.takeIf { station.id in state.zoneIds },
             ) {
                 FavoriteButton(station.id in state.favoriteIds) { viewModel.toggleFavorite(station.id) }
                 AlertIconButton(station, station.id in state.stationIdsWithAlert, viewModel)

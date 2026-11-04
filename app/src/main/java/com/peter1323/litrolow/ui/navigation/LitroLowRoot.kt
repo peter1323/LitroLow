@@ -21,12 +21,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -36,8 +40,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.peter1323.litrolow.LitroLowApplication
 import com.peter1323.litrolow.R
+import com.peter1323.litrolow.data.model.parseTankLitres
 import com.peter1323.litrolow.ui.alerts.AlertsScreen
 import com.peter1323.litrolow.ui.alerts.AlertsViewModel
+import com.peter1323.litrolow.ui.components.TankDialog
 import com.peter1323.litrolow.ui.detail.DetailScreen
 import com.peter1323.litrolow.ui.detail.DetailViewModel
 import com.peter1323.litrolow.ui.favorites.FavoritesScreen
@@ -65,19 +71,33 @@ fun LitroLowRoot(isDark: Boolean, onToggleTheme: () -> Unit) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isTab = Tab.entries.any { it.route == currentRoute }
+    var isEditingTank by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopBar(isTab, isDark, onToggleTheme, navController::popBackStack) },
+        topBar = { TopBar(isTab, isDark, { isEditingTank = true }, onToggleTheme, navController::popBackStack) },
         bottomBar = { if (isTab) BottomBar(currentRoute, navController) },
     ) { padding ->
         AppNavHost(navController, isDark, Modifier.padding(padding))
     }
+    if (isEditingTank) TankEditor { isEditingTank = false }
 }
 
-/** Barra superior con el nombre de la app, la flecha de volver y el cambio de tema. */
+/** Diálogo del depósito abierto desde la barra superior, disponible en todas las pantallas. */
+@Composable
+private fun TankEditor(onDismiss: () -> Unit) {
+    val tank = (LocalContext.current.applicationContext as LitroLowApplication).tankPreferences
+    val litres by tank.litres.collectAsStateWithLifecycle()
+    TankDialog(
+        litres = litres,
+        onSave = { text -> parseTankLitres(text)?.let(tank::save) != null },
+        onDismiss = onDismiss,
+    )
+}
+
+/** Barra superior con el nombre de la app, la flecha de volver, los litros del depósito y el cambio de tema. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(isTab: Boolean, isDark: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
+private fun TopBar(isTab: Boolean, isDark: Boolean, onEditTank: () -> Unit, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = BrandGreen,
@@ -94,6 +114,9 @@ private fun TopBar(isTab: Boolean, isDark: Boolean, onToggleTheme: () -> Unit, o
             }
         },
         actions = {
+            IconButton(onClick = onEditTank) {
+                Icon(painterResource(R.drawable.ic_tank), stringResource(R.string.tank_title))
+            }
             IconButton(onClick = onToggleTheme) {
                 Icon(
                     painterResource(if (isDark) R.drawable.ic_light_mode else R.drawable.ic_dark_mode),

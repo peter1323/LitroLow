@@ -42,6 +42,19 @@ fun List<Station>.filterAndSort(brand: String?, fuel: FuelType, query: String): 
     }.sortedBy { it.prices.of(fuel) }
 }
 
+/**
+ * Elige las gasolineras comparables de unos resultados: las de la provincia buscada y, si el texto no es una
+ * provincia, las de la localidad. Así, «salamanca» incluye Santa Marta de Tormes pero no una calle Salamanca
+ * de otra provincia. Devuelve una lista vacía si quedan varias provincias, porque compararlas no serviría de nada.
+ */
+fun List<Station>.comparableZone(query: String): List<Station> {
+    val normalizedQuery = normalizeText(query.trim())
+    val inProvince = filter { normalizeText(it.province).contains(normalizedQuery) }
+    val inLocality = filter { normalizeText(it.locality).contains(normalizedQuery) }
+    val zone = inProvince.ifEmpty { inLocality }.ifEmpty { this }
+    return if (zone.distinctBy { it.province }.size == 1) zone else emptyList()
+}
+
 /** Calcula la distancia en kilómetros entre dos puntos con la fórmula del semiverseno. */
 fun distanceKm(a: GeoPoint, b: GeoPoint): Double {
     val deltaLat = Math.toRadians(b.latitude - a.latitude)

@@ -7,6 +7,7 @@ import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.PriceComparison
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.data.model.comparableZone
 import com.peter1323.litrolow.data.model.comparePrices
 import com.peter1323.litrolow.data.model.filterAndSort
 import com.peter1323.litrolow.data.model.parseTankLitres
@@ -28,8 +29,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Estado completo de la pantalla de lista. [comparison] y [zoneName] solo existen si los resultados
- * son de una misma provincia: comparar con gasolineras de otra punta de España no serviría de nada.
+ * Estado completo de la pantalla de lista. [comparison] y [zoneName] se refieren a [zoneIds], las gasolineras
+ * de la zona buscada; el resto de resultados, como una calle con ese nombre en otra provincia, no se compara.
  */
 data class StationsUiState(
     val isLoading: Boolean = true,
@@ -41,6 +42,7 @@ data class StationsUiState(
     val fuel: FuelType = FuelType.GASOLINE_95,
     val favoriteIds: Set<String> = emptySet(),
     val stationIdsWithAlert: Set<String> = emptySet(),
+    val zoneIds: Set<String> = emptySet(),
     val comparison: PriceComparison? = null,
     val zoneName: String? = null,
     val isFiltered: Boolean = false,
@@ -74,19 +76,22 @@ class StationsViewModel(
     val uiState: StateFlow<StationsUiState> =
         combine(repository.stations, filters, status, marks, tankLitres) { stations, (brand, fuel, query), (refreshing, error), (favoriteIds, alertIds), litres ->
             val filtered = stations.filterAndSort(brand, fuel, query)
-            val isSameProvince = filtered.distinctBy { it.province }.size == 1
+            val zone = filtered.comparableZone(query)
+            val zoneIds = zone.map { it.id }.toSet()
             StationsUiState(
                 favoriteIds = favoriteIds,
                 stationIdsWithAlert = alertIds,
                 isLoading = refreshing,
                 error = error,
                 hasSavedData = stations.isNotEmpty(),
-                stations = filtered,
+                // Primero la zona buscada, para que la cabecera y la primera tarjeta sean la misma gasolinera.
+                stations = zone + filtered.filter { it.id !in zoneIds },
+                zoneIds = zoneIds,
                 brands = popularBrands(stations),
                 selectedBrand = brand,
                 fuel = fuel,
-                comparison = if (isSameProvince) comparePrices(filtered.mapNotNull { it.prices.of(fuel) }) else null,
-                zoneName = if (isSameProvince) filtered.zoneName() else null,
+                comparison = comparePrices(zone.mapNotNull { it.prices.of(fuel) }),
+                zoneName = zone.takeIf { it.isNotEmpty() }?.zoneName(),
                 isFiltered = brand != null || query.isNotBlank(),
                 tankLitres = litres,
             )

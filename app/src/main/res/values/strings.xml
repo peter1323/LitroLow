@@ -26,6 +26,8 @@
     <string name="hero_cheapest_spain">La más barata de España</string>
     <string name="hero_savings">Ahorras %1$s € al llenar %2$d L frente a la media</string>
     <string name="hero_search_hint">Busca tu localidad para ver cuánto ahorras</string>
+    <string name="hero_mixed_zones">Estos resultados son de varias provincias: escribe una localidad o provincia para ver cuánto ahorras</string>
+    <string name="hero_single_station">No hay otra gasolinera en esta zona con la que comparar</string>
     <string name="tank_title">Tu depósito</string>
     <string name="tank_question">¿Cuántos litros sueles echar al repostar?</string>
     <string name="tank_litres">Litros</string>

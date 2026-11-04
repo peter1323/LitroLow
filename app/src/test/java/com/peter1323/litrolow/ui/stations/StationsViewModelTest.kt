@@ -72,6 +72,36 @@ class StationsViewModelTest {
         assertEquals("MIJAS", viewModel.uiState.value.zoneName)
     }
 
+    /** Buscar una provincia incluye todas sus localidades, pero no una calle con ese nombre en otra provincia. */
+    @Test
+    fun `compara la provincia buscada y no las calles con su nombre`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(
+            station("santa-marta", locality = "SANTA MARTA DE TORMES", province = "SALAMANCA", price95 = 1.5),
+            station("capital", locality = "SALAMANCA", province = "SALAMANCA", price95 = 1.7),
+            station("calle", locality = "ARROYO", province = "VALLADOLID", price95 = 1.2, address = "AVENIDA SALAMANCA, 21"),
+        )
+        viewModel.uiState.launchIn(backgroundScope)
+        viewModel.updateQuery("salamanca")
+        val state = viewModel.uiState.value
+        assertEquals(listOf("santa-marta", "capital", "calle"), state.stations.map { it.id })
+        assertEquals(setOf("santa-marta", "capital"), state.zoneIds)
+        assertEquals(1.6, state.comparison!!.average, 0.0001)
+        assertEquals("SALAMANCA", state.zoneName)
+    }
+
+    /** Una localidad que existe en dos provincias no se puede comparar como una sola zona. */
+    @Test
+    fun `no compara una localidad repetida en dos provincias`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(
+            station("1", locality = "SANTA MARTA", province = "BADAJOZ", price95 = 1.5),
+            station("2", locality = "SANTA MARTA DE TORMES", province = "SALAMANCA", price95 = 1.7),
+        )
+        viewModel.uiState.launchIn(backgroundScope)
+        viewModel.updateQuery("santa marta")
+        assertEquals(null, viewModel.uiState.value.comparison)
+        assertTrue(viewModel.uiState.value.isFiltered)
+    }
+
     /** Comparar con gasolineras de otra punta de España daría un ahorro que no sirve para nada. */
     @Test
     fun `no compara si hay varias provincias`() = runTest(mainRule.dispatcher) {
