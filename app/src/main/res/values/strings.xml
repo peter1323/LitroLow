@@ -5,7 +5,7 @@
     <string name="fuel_diesel">Diésel</string>
     <string name="fuel_diesel_premium">Diésel Premium</string>
 
-    <string name="tab_stations">Gasolineras</string>
+    <string name="tab_stations">Gasolinera</string>
     <string name="tab_map">Mapa</string>
     <string name="tab_favorites">Favoritas</string>
     <string name="tab_alerts">Alertas</string>
