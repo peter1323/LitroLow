@@ -43,7 +43,7 @@
     <string name="cancel">Cancelar</string>
     <string name="delete_alert">Borrar alerta</string>
     <string name="create_another_alert">Ya tienes una alerta aquí. Crear otra</string>
-    <string name="alert_summary">%1$s: avisar a %2$s o menos</string>
+    <string name="alert_summary">%1$s: avisar a %2$s € o menos</string>
     <string name="empty_alerts">Aún no tienes alertas. Pulsa la campana de una gasolinera para crear una.</string>
     <string name="notifications_off">Las notificaciones están desactivadas: actívalas en los ajustes del móvil para recibir estas alertas.</string>
     <string name="alert_channel_name">Alertas de precio</string>

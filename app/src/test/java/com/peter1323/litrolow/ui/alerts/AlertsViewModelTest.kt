@@ -11,6 +11,7 @@ import com.peter1323.litrolow.testutil.FakeApi
 import com.peter1323.litrolow.testutil.FakeStationDao
 import com.peter1323.litrolow.testutil.MainDispatcherRule
 import com.peter1323.litrolow.testutil.stationDto
+import com.peter1323.litrolow.ui.components.formatAlertPrice
 import com.peter1323.litrolow.ui.detail.DetailViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.test.runTest
@@ -79,6 +80,14 @@ class AlertsViewModelTest {
 
         viewModel.delete(alert.id)
         assertTrue(viewModel.uiState.value.alerts.isEmpty())
+    }
+
+    /** Un euro no debe leerse como mil: "1,000" parece un millar en español. */
+    @Test
+    fun `el precio de la alerta no parece un millar`() {
+        assertEquals("1,00", formatAlertPrice(1.0))
+        assertEquals("1,45", formatAlertPrice(1.45))
+        assertEquals("1,459", formatAlertPrice(1.459))
     }
 
     /** Un precio vacío o sin sentido no debe crear una alerta que nunca avisaría. */

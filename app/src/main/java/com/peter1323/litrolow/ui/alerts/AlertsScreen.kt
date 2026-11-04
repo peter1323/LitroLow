@@ -28,7 +28,7 @@ import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.PriceAlert
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
-import com.peter1323.litrolow.ui.components.formatPrice
+import com.peter1323.litrolow.ui.components.formatAlertPrice
 
 /** Lista de alertas de precio, o una explicación de cómo crearlas si aún no hay ninguna. */
 @Composable
@@ -68,7 +68,7 @@ private fun AlertCard(alert: PriceAlert, onClick: () -> Unit, onDelete: () -> Un
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(alert.stationName, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.alert_summary, stringResource(alert.fuel.label), formatPrice(alert.maxPrice)))
+                Text(stringResource(R.string.alert_summary, stringResource(alert.fuel.label), formatAlertPrice(alert.maxPrice)))
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, stringResource(R.string.delete_alert))

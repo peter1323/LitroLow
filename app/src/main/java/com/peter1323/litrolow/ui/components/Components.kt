@@ -34,6 +34,8 @@ import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
 import com.peter1323.litrolow.data.model.Station
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es-ES")
@@ -54,6 +56,10 @@ fun formatPrice(price: Double?): String =
     } else {
         String.format(SpanishLocale, stringResource(R.string.price_format), price)
     }
+
+/** Precio máximo de una alerta con dos decimales, o tres si los tiene: "1,000" se leería como mil. */
+fun formatAlertPrice(price: Double): String =
+    DecimalFormat("0.00#", DecimalFormatSymbols(SpanishLocale)).format(price)
 
 /** Indicador de carga a pantalla completa. */
 @Composable
