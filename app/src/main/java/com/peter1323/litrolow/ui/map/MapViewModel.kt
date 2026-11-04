@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.GeoPoint
+import com.peter1323.litrolow.data.model.PriceComparison
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.data.model.comparePrices
 import com.peter1323.litrolow.data.model.distanceKm
 import com.peter1323.litrolow.data.model.matches
 import com.peter1323.litrolow.data.model.normalizeText
@@ -35,6 +37,7 @@ data class MapUiState(
     val center: GeoPoint? = null,
     val fuel: FuelType = FuelType.GASOLINE_95,
     val nearby: List<Station> = emptyList(),
+    val comparison: PriceComparison? = null,
 ) {
     val cheapest: Station? get() = nearby.firstOrNull()
 }
@@ -58,7 +61,10 @@ class MapViewModel(
 
     val uiState: StateFlow<MapUiState> =
         combine(stations, center, fuel, status) { stations, center, fuel, (searching, problem) ->
-            MapUiState(searching, problem, center, fuel, nearbyStations(stations, center, fuel))
+            val inRadius = stationsInRadius(stations, center, fuel)
+            // La comparación usa todas las de la zona: solo con las más baratas, el semáforo engañaría.
+            val comparison = comparePrices(inRadius.mapNotNull { it.prices.of(fuel) })
+            MapUiState(searching, problem, center, fuel, inRadius.take(MAX_MARKERS), comparison)
         }
             .flowOn(filterDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MapUiState())
@@ -102,12 +108,11 @@ class MapViewModel(
     }
 
     /** Gasolineras dentro del radio que venden el combustible, de más barata a más cara. */
-    private fun nearbyStations(stations: List<Station>, center: GeoPoint?, fuel: FuelType): List<Station> {
+    private fun stationsInRadius(stations: List<Station>, center: GeoPoint?, fuel: FuelType): List<Station> {
         if (center == null) return emptyList()
         return stations
             .filter { it.prices.of(fuel) != null }
             .filter { distanceKm(center, GeoPoint(it.latitude, it.longitude)) <= NEARBY_RADIUS_KM }
             .sortedBy { it.prices.of(fuel) }
-            .take(MAX_MARKERS)
     }
 }

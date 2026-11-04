@@ -30,13 +30,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Ajusta los iconos del sistema al tema de la app, que puede no coincidir con el del móvil. */
+    /** Ajusta los iconos del sistema: arriba siempre oscuros porque la barra es verde; abajo según el tema de la app. */
     private fun applySystemBars(isDark: Boolean) {
-        val style = if (isDark) {
-            SystemBarStyle.dark(Color.TRANSPARENT)
-        } else {
-            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-        }
-        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        val lightStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(
+            statusBarStyle = lightStyle,
+            navigationBarStyle = if (isDark) SystemBarStyle.dark(Color.TRANSPARENT) else lightStyle,
+        )
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,10 +32,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.PriceAlert
+import com.peter1323.litrolow.data.model.PriceLevel
 import com.peter1323.litrolow.ui.components.AlertFormDialog
+import com.peter1323.litrolow.ui.components.BrandBadge
+import com.peter1323.litrolow.ui.components.BrandHeader
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
+import com.peter1323.litrolow.ui.components.PricePill
 import com.peter1323.litrolow.ui.components.formatAlertPrice
+import com.peter1323.litrolow.ui.components.formatDecimal
+import com.peter1323.litrolow.ui.components.formatPrice
+
+private const val CENTS_PER_EURO = 100
 
 /** Lista de alertas de precio, o una explicación de cómo crearlas si aún no hay ninguna. */
 @Composable
@@ -44,12 +53,24 @@ fun AlertsScreen(viewModel: AlertsViewModel, onAlertClick: (String) -> Unit) {
         state.isLoading -> LoadingView()
         state.alerts.isEmpty() -> MessageView(stringResource(R.string.empty_alerts))
         else -> LazyColumn(
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            item {
+                BrandHeader {
+                    Text(stringResource(R.string.tab_alerts), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.alerts_met_count, state.metCount, state.alerts.size))
+                }
+            }
             item { NotificationsOffNotice() }
             items(state.alerts, key = { it.id }) { alert ->
-                AlertCard(alert, state.soldFuels[alert.stationId].orEmpty(), viewModel) { onAlertClick(alert.stationId) }
+                AlertCard(
+                    alert,
+                    state.currentPrices[alert.id],
+                    state.soldFuels[alert.stationId].orEmpty(),
+                    viewModel,
+                    Modifier.padding(horizontal = 16.dp),
+                ) { onAlertClick(alert.stationId) }
             }
         }
     }
@@ -61,27 +82,43 @@ private fun NotificationsOffNotice() {
     if (!NotificationManagerCompat.from(LocalContext.current).areNotificationsEnabled()) {
         Text(
             stringResource(R.string.notifications_off),
+            Modifier.padding(horizontal = 16.dp),
             color = MaterialTheme.colorScheme.secondary,
             style = MaterialTheme.typography.bodyMedium,
         )
     }
 }
 
-/** Tarjeta de una alerta con su gasolinera, combustible, precio máximo y botones de editar y borrar. */
+/** Tarjeta de una alerta con su gasolinera, precio actual, precio máximo y botones de editar y borrar. */
 @Composable
-private fun AlertCard(alert: PriceAlert, soldFuels: List<FuelType>, viewModel: AlertsViewModel, onClick: () -> Unit) {
+private fun AlertCard(
+    alert: PriceAlert,
+    currentPrice: Double?,
+    soldFuels: List<FuelType>,
+    viewModel: AlertsViewModel,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
     var isEditing by rememberSaveable { mutableStateOf(false) }
-    Card(onClick = onClick) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(alert.stationName, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.alert_summary, stringResource(alert.fuel.label), formatAlertPrice(alert.maxPrice)))
+    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BrandBadge(alert.stationName)
+                Text(alert.stationName, Modifier.padding(start = 12.dp), fontWeight = FontWeight.Bold)
             }
-            IconButton(onClick = { isEditing = true }) {
-                Icon(Icons.Default.Edit, stringResource(R.string.edit_alert))
-            }
-            IconButton(onClick = { viewModel.delete(alert.id) }) {
-                Icon(Icons.Default.Delete, stringResource(R.string.delete_alert))
+            currentPrice?.let { AlertProgress(it, alert.maxPrice) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.alert_summary, stringResource(alert.fuel.label), formatAlertPrice(alert.maxPrice)),
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                IconButton(onClick = { isEditing = true }) {
+                    Icon(Icons.Default.Edit, stringResource(R.string.edit_alert))
+                }
+                IconButton(onClick = { viewModel.delete(alert.id) }) {
+                    Icon(Icons.Default.Delete, stringResource(R.string.delete_alert))
+                }
             }
         }
     }
@@ -94,6 +131,24 @@ private fun AlertCard(alert: PriceAlert, soldFuels: List<FuelType>, viewModel: A
             initialPrice = formatAlertPrice(alert.maxPrice),
             onSave = { fuel, price -> viewModel.update(alert, fuel, price) },
             onDismiss = { isEditing = false },
+        )
+    }
+}
+
+/** Precio actual junto a si la alerta se cumple o cuánto le falta. */
+@Composable
+private fun AlertProgress(currentPrice: Double, maxPrice: Double) {
+    val isMet = currentPrice <= maxPrice
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(formatPrice(currentPrice), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        PricePill(
+            if (isMet) {
+                stringResource(R.string.alert_met)
+            } else {
+                stringResource(R.string.alert_cents_left, formatDecimal((currentPrice - maxPrice) * CENTS_PER_EURO, 1))
+            },
+            if (isMet) PriceLevel.CHEAP else PriceLevel.MEDIUM,
+            style = MaterialTheme.typography.labelLarge,
         )
     }
 }

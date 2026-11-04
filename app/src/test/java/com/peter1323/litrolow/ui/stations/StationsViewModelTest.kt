@@ -58,6 +58,48 @@ class StationsViewModelTest {
         assertEquals(setOf("1"), viewModel.uiState.value.stationIdsWithAlert)
     }
 
+    /** Dentro de una misma provincia se compara y se ofrece el ahorro. */
+    @Test
+    fun `compara los resultados de una misma provincia`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(
+            station("1", locality = "MIJAS", province = "MALAGA", price95 = 1.4),
+            station("2", locality = "MIJAS", province = "MALAGA", price95 = 1.6),
+            station("3", locality = "GETAFE", province = "MADRID", price95 = 1.2),
+        )
+        viewModel.uiState.launchIn(backgroundScope)
+        viewModel.updateQuery("mijas")
+        assertEquals(1.5, viewModel.uiState.value.comparison!!.average, 0.0001)
+        assertEquals("MIJAS", viewModel.uiState.value.zoneName)
+    }
+
+    /** Comparar con gasolineras de otra punta de España daría un ahorro que no sirve para nada. */
+    @Test
+    fun `no compara si hay varias provincias`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(
+            station("1", province = "MALAGA", price95 = 1.4),
+            station("2", province = "MADRID", price95 = 1.6),
+        )
+        viewModel.uiState.launchIn(backgroundScope)
+        assertEquals(null, viewModel.uiState.value.comparison)
+        assertFalse(viewModel.uiState.value.isFiltered)
+    }
+
+    /** Los litros válidos se guardan y los que no lo son se rechazan. */
+    @Test
+    fun `guarda solo litros validos`() = runTest(mainRule.dispatcher) {
+        val saved = mutableListOf<Int>()
+        val repository = StationRepository(FakeApi(), FakeStationDao(listOf(station("1"))), now = { 0 })
+        val viewModel = StationsViewModel(
+            repository,
+            AlertRepository(FakeAlertDao(), repository),
+            mainRule.dispatcher,
+            saveTankLitres = { saved += it },
+        )
+        assertTrue(viewModel.saveTank("47"))
+        assertFalse(viewModel.saveTank("4000"))
+        assertEquals(listOf(47), saved)
+    }
+
     /** La lista debe salir de más barata a más cara por el combustible elegido. */
     @Test
     fun `ordena de menor a mayor precio`() = runTest(mainRule.dispatcher) {

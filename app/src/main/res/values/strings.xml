@@ -21,6 +21,22 @@
     <string name="error_api">El servicio de precios no responde ahora mismo. Inténtalo más tarde.</string>
     <string name="showing_saved_data">Mostrando los últimos datos guardados.</string>
 
+    <string name="hero_cheapest_in">La más barata en %1$s</string>
+    <string name="hero_cheapest_search">La más barata de tu búsqueda</string>
+    <string name="hero_cheapest_spain">La más barata de España</string>
+    <string name="hero_savings">Ahorras %1$s € al llenar %2$d L frente a la media</string>
+    <string name="hero_search_hint">Busca tu localidad para ver cuánto ahorras</string>
+    <string name="tank_title">Tu depósito</string>
+    <string name="tank_question">¿Cuántos litros sueles echar al repostar?</string>
+    <string name="tank_litres">Litros</string>
+    <string name="tank_invalid">Escribe un número entero de 1 a 200 litros</string>
+    <string name="detail_savings">%1$s: ahorras %2$s € al llenar %3$d L frente a la media de %4$s</string>
+    <string name="detail_extra">%1$s: pagas %2$s € más al llenar %3$d L frente a la media de %4$s</string>
+    <string name="detail_average">%1$s: en la media de %2$s</string>
+    <string name="alerts_met_count">Cumplidas: %1$d de %2$d</string>
+    <string name="alert_met">Cumplida</string>
+    <string name="alert_cents_left">Faltan %1$s cts</string>
+
     <string name="search_hint">Buscar localidad, dirección o marca</string>
     <string name="all_brands">Todas</string>
     <string name="empty_stations">Ninguna gasolinera coincide con estos filtros.</string>

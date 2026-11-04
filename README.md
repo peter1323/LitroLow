@@ -13,12 +13,14 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 ## Funcionalidades
 
 - **Lista de gasolineras** con los precios de Gasolina 95, Gasolina 98, Diésel y Diésel Premium, y un distintivo con la inicial y el color de cada marca para reconocerla de un vistazo.
+- **Ahorro en euros**: al buscar una localidad, la cabecera muestra la más barata y lo que ahorras frente a la media de la zona, según los litros que sueles echar (de 1 a 200). Solo se compara dentro de una misma provincia.
+- **Semáforo de precios**: verde, ámbar o rojo según lo barato que es cada precio en su zona, también en el mapa y en el detalle.
 - **Acciones directas**: desde la lista puedes marcar una favorita o crear una alerta sin abrir la gasolinera.
 - **Filtros** por marca (sacadas de los datos reales) y por combustible, con orden de menor a mayor precio.
 - **Búsqueda** por localidad, dirección o marca, sin distinguir tildes ni mayúsculas.
-- **Mapa con OpenStreetMap**: muestra las gasolineras a menos de 10 km y destaca la más barata. Funciona con tu ubicación o escribiendo una dirección, así que el permiso de ubicación es opcional.
+- **Mapa con OpenStreetMap**: muestra las gasolineras a menos de 10 km con su precio sobre el mapa y destaca la más barata. Funciona con tu ubicación o escribiendo una dirección, así que el permiso de ubicación es opcional.
 - **Historial de precios** de cada gasolinera en una gráfica.
-- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple. Los precios se comprueban cada 3 horas aunque la app esté cerrada. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
+- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple. Los precios se comprueban cada 3 horas aunque la app esté cerrada. Cada alerta indica su precio actual y si está cumplida o cuánto le falta. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
 - **Favoritas** guardadas en el móvil, que se quitan con un toque desde su propia lista.
 - **Detalle** con dirección, horario, precios y botón para abrir la ruta en la app de mapas.
 - **Estados claros** de carga, error (sin internet o fallo de la API) y lista vacía. Si falla la red, se muestran los últimos datos guardados.
@@ -77,8 +79,8 @@ app/src/main/java/com/peter1323/litrolow/
 ├── data/
 │   ├── api/                   Retrofit, formato de la API y conversión de precios
 │   ├── db/                    Base de datos Room y DAO
-│   ├── model/                 Modelos, filtros y cálculo de distancias
-│   └── repository/            Gasolineras, alertas, ubicación y tema
+│   ├── model/                 Modelos, filtros, distancias y comparación de precios
+│   └── repository/            Gasolineras, alertas, ubicación, tema y depósito
 ├── ui/
 │   ├── alerts/                Pantalla y ViewModel de alertas
 │   ├── components/            Elementos compartidos entre pantallas

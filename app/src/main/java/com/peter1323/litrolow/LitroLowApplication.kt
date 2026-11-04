@@ -6,6 +6,7 @@ import com.peter1323.litrolow.data.db.LitroLowDatabase
 import com.peter1323.litrolow.data.repository.AlertRepository
 import com.peter1323.litrolow.data.repository.LocationRepository
 import com.peter1323.litrolow.data.repository.StationRepository
+import com.peter1323.litrolow.data.repository.TankPreferences
 import com.peter1323.litrolow.data.repository.ThemePreferences
 import com.peter1323.litrolow.worker.PriceAlertWorker
 
@@ -19,6 +20,7 @@ class LitroLowApplication : Application() {
     val alertRepository by lazy { AlertRepository(database.alertDao(), stationRepository) }
     val locationRepository by lazy { LocationRepository(this) }
     val themePreferences by lazy { ThemePreferences(this) }
+    val tankPreferences by lazy { TankPreferences(this) }
 
     /** Programa la comprobación de alertas al arrancar la app. */
     override fun onCreate() {

@@ -146,6 +146,6 @@ private fun CheapestCard(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.secondary,
         )
-        StationCard(station, { onStationClick(station.id) }, Modifier.padding(top = 4.dp), state.fuel)
+        StationCard(station, { onStationClick(station.id) }, Modifier.padding(top = 4.dp), state.fuel, state.comparison)
     }
 }

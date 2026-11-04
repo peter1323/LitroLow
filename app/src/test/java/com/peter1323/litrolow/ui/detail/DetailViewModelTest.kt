@@ -8,7 +8,9 @@ import com.peter1323.litrolow.testutil.FakeAlertDao
 import com.peter1323.litrolow.testutil.FakeApi
 import com.peter1323.litrolow.testutil.FakeStationDao
 import com.peter1323.litrolow.testutil.MainDispatcherRule
+import com.peter1323.litrolow.testutil.station
 import com.peter1323.litrolow.testutil.stationDto
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,6 +34,22 @@ class DetailViewModelTest {
         clock += 1_000
         api.response = StationsResponse("OK", listOf(stationDto(price95 = price95)))
         repository.refreshAll()
+    }
+
+    /** El ahorro se calcula solo con las gasolineras de su localidad y con los litros indicados. */
+    @Test
+    fun `compara con su localidad`() = runTest(mainRule.dispatcher) {
+        val saved = listOf(
+            station("1", price95 = 1.4),
+            station("2", price95 = 1.6),
+            station("3", locality = "OTRA", price95 = 1.0),
+        )
+        val local = StationRepository(FakeApi(), FakeStationDao(saved), now = { 0 })
+        val viewModel = DetailViewModel("1", local, AlertRepository(FakeAlertDao(), local), flowOf(50))
+        viewModel.uiState.launchIn(backgroundScope)
+        val state = viewModel.uiState.value
+        assertEquals(50, state.tankLitres)
+        assertEquals(1.5, state.comparisons.getValue(FuelType.GASOLINE_95).average, 0.0001)
     }
 
     /** Cada cambio de precio debe añadir un punto a la gráfica. */

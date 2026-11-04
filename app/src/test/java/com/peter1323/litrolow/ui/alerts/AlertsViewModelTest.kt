@@ -84,6 +84,18 @@ class AlertsViewModelTest {
         assertTrue(viewModel.uiState.value.alerts.isEmpty())
     }
 
+    /** La pantalla debe conocer el precio actual para decir si la alerta está cumplida. */
+    @Test
+    fun `muestra el precio actual y las cumplidas`() = runTest(mainRule.dispatcher) {
+        addAlert()
+        checkWithPrice("1,400")
+        val viewModel = AlertsViewModel(alerts, stations)
+        viewModel.uiState.launchIn(backgroundScope)
+        val state = viewModel.uiState.value
+        assertEquals(1.4, state.currentPrices.getValue(state.alerts.single().id), 0.0001)
+        assertEquals(1, state.metCount)
+    }
+
     /** Editar debe cambiar los datos, conservar la alerta y rearmarla; un precio inválido no debe tocarla. */
     @Test
     fun `editar una alerta`() = runTest(mainRule.dispatcher) {

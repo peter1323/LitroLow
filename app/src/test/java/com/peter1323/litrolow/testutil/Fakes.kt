@@ -26,8 +26,9 @@ fun station(
     price95: Double? = 1.5,
     provinceId: String = "28",
     updatedAt: Long = 0,
+    province: String = "MADRID",
 ) = Station(
-    id, brand, "CALLE MAYOR 1", locality, "MADRID", provinceId, "L-D: 24H", latitude, longitude,
+    id, brand, "CALLE MAYOR 1", locality, province, provinceId, "L-D: 24H", latitude, longitude,
     FuelPrices(price95, null, 1.4, null), updatedAt,
 )
 

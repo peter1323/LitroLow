@@ -11,11 +11,14 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -23,6 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -42,6 +46,8 @@ import com.peter1323.litrolow.ui.map.MapScreen
 import com.peter1323.litrolow.ui.map.MapViewModel
 import com.peter1323.litrolow.ui.stations.StationsScreen
 import com.peter1323.litrolow.ui.stations.StationsViewModel
+import com.peter1323.litrolow.ui.theme.BrandGreen
+import com.peter1323.litrolow.ui.theme.OnBrandGreen
 
 /** Pestañas de la barra inferior, con su ruta de navegación. */
 private enum class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector) {
@@ -73,7 +79,13 @@ fun LitroLowRoot(isDark: Boolean, onToggleTheme: () -> Unit) {
 @Composable
 private fun TopBar(isTab: Boolean, isDark: Boolean, onToggleTheme: () -> Unit, onBack: () -> Unit) {
     TopAppBar(
-        title = { Text(stringResource(R.string.app_name)) },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = BrandGreen,
+            titleContentColor = OnBrandGreen,
+            navigationIconContentColor = OnBrandGreen,
+            actionIconContentColor = OnBrandGreen,
+        ),
+        title = { Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold) },
         navigationIcon = {
             if (!isTab) {
                 IconButton(onClick = onBack) {
@@ -108,6 +120,7 @@ private fun BottomBar(currentRoute: String?, navController: NavHostController) {
                 },
                 icon = { Icon(tab.icon, contentDescription = null) },
                 label = { Text(stringResource(tab.label)) },
+                colors = NavigationBarItemDefaults.colors(selectedTextColor = MaterialTheme.colorScheme.primary),
             )
         }
     }
@@ -120,7 +133,15 @@ private fun AppNavHost(navController: NavHostController, isDark: Boolean, modifi
     val openDetail: (String) -> Unit = { navController.navigate("detail/$it") }
     NavHost(navController, startDestination = Tab.STATIONS.route, modifier = modifier) {
         composable(Tab.STATIONS.route) {
-            StationsScreen(viewModel { StationsViewModel(app.stationRepository, app.alertRepository) }, openDetail)
+            val stationsViewModel = viewModel {
+                StationsViewModel(
+                    app.stationRepository,
+                    app.alertRepository,
+                    tankLitres = app.tankPreferences.litres,
+                    saveTankLitres = app.tankPreferences::save,
+                )
+            }
+            StationsScreen(stationsViewModel, openDetail)
         }
         composable(Tab.MAP.route) {
             val mapViewModel = viewModel {
@@ -140,7 +161,7 @@ private fun AppNavHost(navController: NavHostController, isDark: Boolean, modifi
         }
         composable("detail/{$DETAIL_ARG}") { entry ->
             val stationId = requireNotNull(entry.arguments?.getString(DETAIL_ARG))
-            DetailScreen(viewModel { DetailViewModel(stationId, app.stationRepository, app.alertRepository) })
+            DetailScreen(viewModel { DetailViewModel(stationId, app.stationRepository, app.alertRepository, app.tankPreferences.litres) })
         }
     }
 }

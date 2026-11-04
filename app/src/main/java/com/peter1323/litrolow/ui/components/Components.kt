@@ -1,17 +1,22 @@
 package com.peter1323.litrolow.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -19,26 +24,40 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableChipColors
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.LoadError
+import com.peter1323.litrolow.data.model.PriceComparison
+import com.peter1323.litrolow.data.model.PriceLevel
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.ui.theme.BrandGreen
+import com.peter1323.litrolow.ui.theme.OnBrandGreen
+import com.peter1323.litrolow.ui.theme.colors
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es-ES")
+
+// Evita que un precio casi igual al más barato deje una barra invisible.
+private const val MIN_BAR_FRACTION = 0.05f
 
 /** Texto de cada error de carga, para que todas las pantallas expliquen lo mismo. */
 @get:StringRes
@@ -60,6 +79,10 @@ fun formatPrice(price: Double?): String =
 /** Precio máximo de una alerta con dos decimales, o tres si los tiene: "1,000" se leería como mil. */
 fun formatAlertPrice(price: Double): String =
     DecimalFormat("0.00#", DecimalFormatSymbols(SpanishLocale)).format(price)
+
+/** Escribe una cantidad con coma y los decimales indicados, como "3,60". */
+fun formatDecimal(value: Double, decimals: Int): String =
+    String.format(SpanishLocale, "%.${decimals}f", value)
 
 /** Indicador de carga a pantalla completa. */
 @Composable
@@ -92,6 +115,13 @@ fun MessageView(
     }
 }
 
+/** Colores de los chips elegidos, para que resalten con el color de la marca. */
+@Composable
+fun selectedChipColors(): SelectableChipColors = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = MaterialTheme.colorScheme.primary,
+    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+)
+
 /** Fila desplazable de chips para elegir combustible; se comparte entre la lista y el mapa. */
 @Composable
 fun FuelChips(
@@ -110,6 +140,7 @@ fun FuelChips(
                 selected = fuel == selected,
                 onClick = { onSelect(fuel) },
                 label = { Text(stringResource(fuel.label)) },
+                colors = selectedChipColors(),
             )
         }
     }
@@ -117,19 +148,41 @@ fun FuelChips(
 
 /** Botón de corazón para marcar o quitar una favorita; se comparte entre la lista y el detalle. */
 @Composable
-fun FavoriteButton(isFavorite: Boolean, onToggle: () -> Unit) {
+fun FavoriteButton(isFavorite: Boolean, tint: Color = MaterialTheme.colorScheme.primary, onToggle: () -> Unit) {
     IconButton(onClick = onToggle) {
         Icon(
             if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             stringResource(if (isFavorite) R.string.remove_favorite else R.string.add_favorite),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = tint,
         )
     }
 }
 
+/** Cabecera verde que abre las pantallas principales. */
+@Composable
+fun BrandHeader(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Surface(modifier.fillMaxWidth(), color = BrandGreen, contentColor = OnBrandGreen) {
+        Column(Modifier.padding(16.dp), content = content)
+    }
+}
+
+/** Etiqueta con un precio o un estado; toma el color del semáforo, o uno neutro si no hay con qué comparar. */
+@Composable
+fun PricePill(
+    text: String,
+    level: PriceLevel?,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.titleMedium,
+) {
+    val colors = level?.colors ?: (MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurface)
+    Surface(modifier, shape = CircleShape, color = colors.first, contentColor = colors.second) {
+        Text(text, Modifier.padding(horizontal = 12.dp, vertical = 4.dp), style = style, fontWeight = FontWeight.Bold)
+    }
+}
+
 /**
- * Tarjeta de una gasolinera con su marca y sus cuatro precios; resalta el combustible indicado.
- * [actions] añade botones a la cabecera, para actuar sin entrar en el detalle.
+ * Tarjeta de una gasolinera con su marca y sus cuatro precios. Destaca el combustible indicado y, si hay
+ * [comparison], lo colorea según lo barato que es en su zona. [actions] añade botones para actuar sin entrar en el detalle.
  */
 @Composable
 fun StationCard(
@@ -137,42 +190,71 @@ fun StationCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     highlightedFuel: FuelType? = null,
+    comparison: PriceComparison? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 BrandBadge(station.brand)
-                Text(
-                    station.brand,
-                    Modifier.weight(1f).padding(start = 12.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(
+                        station.brand,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        "${station.address} · ${station.locality}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 actions()
             }
-            Text(
-                "${station.address} · ${station.locality}",
-                Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                Modifier.fillMaxWidth().padding(top = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                FuelType.entries.forEach { fuel ->
-                    PriceColumn(fuel, station.prices.of(fuel), isHighlighted = fuel == highlightedFuel)
-                }
-            }
+            StationPrices(station, highlightedFuel, comparison)
         }
+    }
+}
+
+/** Precio destacado con su barra, si lo hay, y los demás combustibles en pequeño. */
+@Composable
+private fun StationPrices(station: Station, highlightedFuel: FuelType?, comparison: PriceComparison?) {
+    val highlightedPrice = highlightedFuel?.let { station.prices.of(it) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        highlightedPrice?.let { PricePill(formatPrice(it), comparison?.levelOf(it)) }
+        FuelType.entries.filter { it != highlightedFuel }.forEach { fuel ->
+            PriceColumn(fuel, station.prices.of(fuel), Modifier.weight(1f))
+        }
+    }
+    if (highlightedPrice != null && comparison != null) PriceBar(highlightedPrice, comparison)
+}
+
+/** Barra que sitúa un precio entre el más barato y el más caro de su zona. */
+@Composable
+private fun PriceBar(price: Double, comparison: PriceComparison) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(5.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth(comparison.position(price).coerceAtLeast(MIN_BAR_FRACTION))
+                .fillMaxHeight()
+                .background(comparison.levelOf(price).colors.first, CircleShape),
+        )
     }
 }
 
 /** Nombre de un combustible con su precio debajo. */
 @Composable
-private fun PriceColumn(fuel: FuelType, price: Double?, isHighlighted: Boolean) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 2.dp)) {
+private fun PriceColumn(fuel: FuelType, price: Double?, modifier: Modifier = Modifier) {
+    Column(modifier.padding(horizontal = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             stringResource(fuel.label),
             style = MaterialTheme.typography.labelSmall,
@@ -180,11 +262,6 @@ private fun PriceColumn(fuel: FuelType, price: Double?, isHighlighted: Boolean) 
             textAlign = TextAlign.Center,
             maxLines = 2,
         )
-        Text(
-            formatPrice(price),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal,
-            color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-        )
+        Text(formatPrice(price), style = MaterialTheme.typography.bodySmall)
     }
 }

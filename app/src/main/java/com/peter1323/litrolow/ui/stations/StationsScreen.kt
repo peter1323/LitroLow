@@ -1,42 +1,65 @@
 package com.peter1323.litrolow.ui.stations
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.ui.components.BrandHeader
 import com.peter1323.litrolow.ui.components.CreateAlertAction
 import com.peter1323.litrolow.ui.components.FavoriteButton
 import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
 import com.peter1323.litrolow.ui.components.StationCard
+import com.peter1323.litrolow.ui.components.formatDecimal
+import com.peter1323.litrolow.ui.components.formatPrice
 import com.peter1323.litrolow.ui.components.message
+import com.peter1323.litrolow.ui.components.selectedChipColors
+import com.peter1323.litrolow.ui.theme.BrandGreen
+import com.peter1323.litrolow.ui.theme.OnBrandGreen
 
-/** Pantalla principal: buscador, filtros y lista de gasolineras de más barata a más cara. */
+// Solo son atajos: se puede escribir cualquier cantidad válida.
+private val TANK_SHORTCUTS = listOf(30, 40, 50, 60)
+
+/** Pantalla principal: la más barata con su ahorro, buscador, filtros y lista de más barata a más cara. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StationsScreen(viewModel: StationsViewModel, onStationClick: (String) -> Unit) {
@@ -51,28 +74,111 @@ fun StationsScreen(viewModel: StationsViewModel, onStationClick: (String) -> Uni
             onAction = viewModel::refresh,
         )
         else -> PullToRefreshBox(state.isLoading, viewModel::refresh) {
-            Column(Modifier.fillMaxSize()) {
-                Filters(state, query, viewModel)
-                state.error?.let { SavedDataNotice(stringResource(it.message)) }
-                StationList(state, viewModel, onStationClick)
-            }
+            StationList(state, query, viewModel, onStationClick)
         }
     }
+}
+
+/** Cabecera con la gasolinera más barata de los resultados y lo que se ahorra en ella. */
+@Composable
+private fun CheapestHeader(station: Station, state: StationsUiState, onSave: (String) -> Boolean, onClick: () -> Unit) {
+    val price = station.prices.of(state.fuel)
+    val title = when {
+        state.zoneName != null -> stringResource(R.string.hero_cheapest_in, state.zoneName)
+        state.isFiltered -> stringResource(R.string.hero_cheapest_search)
+        else -> stringResource(R.string.hero_cheapest_spain)
+    }
+    BrandHeader(Modifier.clickable(onClick = onClick)) {
+        Text(title, style = MaterialTheme.typography.labelLarge)
+        Text(formatPrice(price), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+        Text("${station.brand} · ${stringResource(state.fuel.label)}", style = MaterialTheme.typography.bodyMedium)
+        val savings = if (price != null) state.comparison?.savings(price, state.tankLitres) else null
+        if (savings == null) {
+            HeaderNote(stringResource(R.string.hero_search_hint))
+        } else {
+            EditableSavings(formatDecimal(savings, 2), state.tankLitres, onSave)
+        }
+    }
+}
+
+/** Nota del ahorro; al tocarla se pueden cambiar los litros del depósito. */
+@Composable
+private fun EditableSavings(savings: String, litres: Int, onSave: (String) -> Boolean) {
+    var isEditing by rememberSaveable { mutableStateOf(false) }
+    HeaderNote(stringResource(R.string.hero_savings, savings, litres), Modifier.clickable { isEditing = true }, isEditable = true)
+    if (isEditing) TankDialog(litres, onSave) { isEditing = false }
+}
+
+/** Texto destacado dentro de la cabecera verde. */
+@Composable
+private fun HeaderNote(text: String, modifier: Modifier = Modifier, isEditable: Boolean = false) {
+    Surface(
+        Modifier.fillMaxWidth().padding(top = 8.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = OnBrandGreen,
+        contentColor = BrandGreen,
+    ) {
+        Row(modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            if (isEditable) Icon(Icons.Default.Edit, stringResource(R.string.tank_title), Modifier.padding(start = 8.dp))
+        }
+    }
+}
+
+/** Diálogo para indicar los litros que se suelen echar, con atajos o escribiendo cualquier cantidad. */
+@Composable
+private fun TankDialog(litres: Int, onSave: (String) -> Boolean, onDismiss: () -> Unit) {
+    var text by rememberSaveable { mutableStateOf(litres.toString()) }
+    var isInvalid by rememberSaveable { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tank_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.tank_question))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TANK_SHORTCUTS.forEach { shortcut ->
+                        FilterChip(
+                            selected = text == shortcut.toString(),
+                            onClick = { text = shortcut.toString(); isInvalid = false },
+                            label = { Text(shortcut.toString()) },
+                            colors = selectedChipColors(),
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it; isInvalid = false },
+                    label = { Text(stringResource(R.string.tank_litres)) },
+                    isError = isInvalid,
+                    supportingText = { if (isInvalid) Text(stringResource(R.string.tank_invalid)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { if (onSave(text)) onDismiss() else isInvalid = true }) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 /** Buscador, chips de combustible y chips de marca. */
 @Composable
 private fun Filters(state: StationsUiState, query: String, viewModel: StationsViewModel) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = viewModel::updateQuery,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        placeholder = { Text(stringResource(R.string.search_hint)) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-        singleLine = true,
-    )
-    FuelChips(state.fuel, viewModel::selectFuel)
-    BrandChips(state.brands, state.selectedBrand, viewModel::selectBrand)
+    Column {
+        OutlinedTextField(
+            value = query,
+            onValueChange = viewModel::updateQuery,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text(stringResource(R.string.search_hint)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+        )
+        FuelChips(state.fuel, viewModel::selectFuel)
+        BrandChips(state.brands, state.selectedBrand, viewModel::selectBrand)
+    }
 }
 
 /** Fila desplazable con las marcas sacadas de los datos reales. */
@@ -83,10 +189,10 @@ private fun BrandChips(brands: List<String>, selected: String?, onSelect: (Strin
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            FilterChip(selected == null, { onSelect(null) }, { Text(stringResource(R.string.all_brands)) })
+            FilterChip(selected == null, { onSelect(null) }, { Text(stringResource(R.string.all_brands)) }, colors = selectedChipColors())
         }
         items(brands) { brand ->
-            FilterChip(brand == selected, { onSelect(brand) }, { Text(brand) })
+            FilterChip(brand == selected, { onSelect(brand) }, { Text(brand) }, colors = selectedChipColors())
         }
     }
 }
@@ -116,19 +222,32 @@ private fun AlertIconButton(station: Station, hasAlert: Boolean, viewModel: Stat
     }
 }
 
-/** Lista de gasolineras, o un mensaje si los filtros no dejan ninguna. */
+/** Toda la pantalla se desplaza a la vez para que la cabecera y los filtros no le quiten sitio a la lista. */
 @Composable
-private fun StationList(state: StationsUiState, viewModel: StationsViewModel, onStationClick: (String) -> Unit) {
-    if (state.stations.isEmpty()) {
-        MessageView(stringResource(R.string.empty_stations))
-        return
-    }
+private fun StationList(state: StationsUiState, query: String, viewModel: StationsViewModel, onStationClick: (String) -> Unit) {
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        state.stations.firstOrNull()?.let { cheapest ->
+            item(key = "header") {
+                CheapestHeader(cheapest, state, viewModel::saveTank) { onStationClick(cheapest.id) }
+            }
+        }
+        item(key = "filters") { Filters(state, query, viewModel) }
+        state.error?.let { error -> item(key = "notice") { SavedDataNotice(stringResource(error.message)) } }
+        if (state.stations.isEmpty()) {
+            item(key = "empty") { MessageView(stringResource(R.string.empty_stations)) }
+        }
         items(state.stations, key = { it.id }) { station ->
-            StationCard(station, { onStationClick(station.id) }, highlightedFuel = state.fuel) {
+            StationCard(
+                station,
+                { onStationClick(station.id) },
+                Modifier.padding(horizontal = 16.dp),
+                state.fuel,
+                state.comparison,
+            ) {
                 FavoriteButton(station.id in state.favoriteIds) { viewModel.toggleFavorite(station.id) }
                 AlertIconButton(station, station.id in state.stationIdsWithAlert, viewModel)
             }

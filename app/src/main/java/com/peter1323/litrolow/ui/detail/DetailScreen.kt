@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,12 +33,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.ui.components.BrandHeader
 import com.peter1323.litrolow.ui.components.CreateAlertAction
 import com.peter1323.litrolow.ui.components.FavoriteButton
 import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
+import com.peter1323.litrolow.ui.components.PricePill
+import com.peter1323.litrolow.ui.components.formatDecimal
 import com.peter1323.litrolow.ui.components.formatPrice
+import com.peter1323.litrolow.ui.theme.BrandGreen
+import com.peter1323.litrolow.ui.theme.OnBrandGreen
+import kotlin.math.abs
+
+// Por debajo de medio céntimo, el resultado se redondearía a 0,00 €.
+private const val MIN_VISIBLE_SAVINGS = 0.005
 
 /** Pantalla con toda la información de una gasolinera. */
 @Composable
@@ -45,46 +57,91 @@ fun DetailScreen(viewModel: DetailViewModel) {
     when {
         state.isLoading -> LoadingView()
         station == null -> MessageView(stringResource(R.string.station_not_found))
-        else -> Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Header(station, state.isFavorite, viewModel::toggleFavorite)
-            Prices(station)
-            RouteButton(station)
-            CreateAlertAction(station, { fuel, price -> viewModel.createAlert(station, fuel, price) }) { onClick ->
-                OutlinedButton(onClick, Modifier.fillMaxWidth()) { Text(stringResource(R.string.create_alert)) }
+        else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Header(station, state, viewModel::toggleFavorite)
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Prices(station, state)
+                RouteButton(station)
+                CreateAlertAction(station, { fuel, price -> viewModel.createAlert(station, fuel, price) }) { onClick ->
+                    OutlinedButton(onClick, Modifier.fillMaxWidth()) { Text(stringResource(R.string.create_alert)) }
+                }
+                Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleMedium)
             }
-            Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleMedium)
+            // Fuera del margen de la pantalla: los chips ya llevan el suyo y se desplazan hasta el borde.
             FuelChips(state.chartFuel, viewModel::selectChartFuel)
-            PriceHistoryChart(state.chartPoints)
-        }
-    }
-}
-
-/** Marca, dirección, horario y botón de favorita. */
-@Composable
-private fun Header(station: Station, isFavorite: Boolean, onToggleFavorite: () -> Unit) {
-    Row(verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f)) {
-            Text(station.brand, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(station.address)
-            Text("${station.locality} (${station.province})")
-            Text(stringResource(R.string.schedule_format, station.schedule), Modifier.padding(top = 8.dp))
-        }
-        FavoriteButton(isFavorite, onToggleFavorite)
-    }
-}
-
-/** Lista de los precios de cada combustible. */
-@Composable
-private fun Prices(station: Station) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        FuelType.entries.forEach { fuel ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(fuel.label))
-                Text(formatPrice(station.prices.of(fuel)), fontWeight = FontWeight.Bold)
+            Card(Modifier.fillMaxWidth().padding(16.dp)) {
+                Column(Modifier.padding(12.dp)) { PriceHistoryChart(state.chartPoints) }
             }
+        }
+    }
+}
+
+/** Cabecera verde con marca, dirección, horario, botón de favorita y lo que se ahorra frente a la localidad. */
+@Composable
+private fun Header(station: Station, state: DetailUiState, onToggleFavorite: () -> Unit) {
+    BrandHeader {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(station.brand, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(station.address)
+                Text("${station.locality} (${station.province})")
+                Text(stringResource(R.string.schedule_format, station.schedule), Modifier.padding(top = 8.dp))
+            }
+            FavoriteButton(state.isFavorite, OnBrandGreen, onToggleFavorite)
+        }
+        savingsText(station, state)?.let { text ->
+            Surface(
+                Modifier.fillMaxWidth().padding(top = 8.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = OnBrandGreen,
+                contentColor = BrandGreen,
+            ) {
+                Text(text, Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+/** Texto del ahorro con el combustible de la gráfica, o null si en su localidad no hay con qué compararlo. */
+@Composable
+private fun savingsText(station: Station, state: DetailUiState): String? {
+    val price = station.prices.of(state.chartFuel) ?: return null
+    val comparison = state.comparisons[state.chartFuel] ?: return null
+    val fuel = stringResource(state.chartFuel.label)
+    val savings = comparison.savings(price, state.tankLitres)
+    val amount = formatDecimal(abs(savings), 2)
+    return when {
+        abs(savings) < MIN_VISIBLE_SAVINGS -> stringResource(R.string.detail_average, fuel, station.locality)
+        savings > 0 -> stringResource(R.string.detail_savings, fuel, amount, state.tankLitres, station.locality)
+        else -> stringResource(R.string.detail_extra, fuel, amount, state.tankLitres, station.locality)
+    }
+}
+
+/** Precios de cada combustible, coloreados según lo baratos que son en su localidad. */
+@Composable
+private fun Prices(station: Station, state: DetailUiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FuelType.entries.chunked(2).forEach { fuels ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                fuels.forEach { fuel -> FuelPriceCard(fuel, station, state, Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** Tarjeta con el nombre de un combustible y su precio. */
+@Composable
+private fun FuelPriceCard(fuel: FuelType, station: Station, state: DetailUiState, modifier: Modifier) {
+    val price = station.prices.of(fuel)
+    Card(modifier) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                stringResource(fuel.label),
+                Modifier.padding(bottom = 4.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            PricePill(formatPrice(price), price?.let { state.comparisons[fuel]?.levelOf(it) })
         }
     }
 }
