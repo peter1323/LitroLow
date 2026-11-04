@@ -9,6 +9,7 @@
     <string name="tab_map">Mapa</string>
     <string name="tab_favorites">Favoritas</string>
     <string name="tab_alerts">Alertas</string>
+    <string name="tab_more">Más</string>
     <string name="theme_to_light">Cambiar a tema claro</string>
     <string name="theme_to_dark">Cambiar a tema oscuro</string>
     <string name="back">Volver</string>
@@ -53,6 +54,18 @@
     <string name="history_title">Evolución del precio</string>
     <string name="history_not_enough">Todavía no hay datos suficientes. La gráfica se irá completando cuando este precio cambie entre consultas.</string>
     <string name="no_maps_app">No hay ninguna app de mapas instalada.</string>
+    <string name="no_browser">No hay ningún navegador instalado.</string>
+
+    <string name="about_title">Acerca de</string>
+    <string name="about_version">LitroLow %1$s</string>
+    <string name="about_creator">Creador</string>
+    <string name="about_creator_name">peter1323</string>
+    <string name="about_updates">Actualizaciones</string>
+    <string name="about_updates_hint">Ver la última versión publicada</string>
+    <string name="about_github">GitHub</string>
+    <string name="about_data">Datos</string>
+    <string name="about_data_sources">Precios del Ministerio. Mapas © colaboradores de OpenStreetMap.</string>
+    <string name="about_copyright">Copyright © 2026 peter1323. Todos los derechos reservados.</string>
     <string name="empty_favorites">Aún no tienes favoritas. Pulsa el corazón de una gasolinera para guardarla.</string>
 
     <string name="create_alert">Crear alerta de precio</string>

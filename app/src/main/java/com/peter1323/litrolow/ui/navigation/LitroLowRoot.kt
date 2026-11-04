@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +51,7 @@ import com.peter1323.litrolow.ui.favorites.FavoritesScreen
 import com.peter1323.litrolow.ui.favorites.FavoritesViewModel
 import com.peter1323.litrolow.ui.map.MapScreen
 import com.peter1323.litrolow.ui.map.MapViewModel
+import com.peter1323.litrolow.ui.more.MoreScreen
 import com.peter1323.litrolow.ui.stations.StationsScreen
 import com.peter1323.litrolow.ui.stations.StationsViewModel
 import com.peter1323.litrolow.ui.theme.BrandGreen
@@ -61,6 +63,7 @@ private enum class Tab(val route: String, @param:StringRes val label: Int, val i
     MAP("map", R.string.tab_map, Icons.Default.Place),
     FAVORITES("favorites", R.string.tab_favorites, Icons.Default.Favorite),
     ALERTS("alerts", R.string.tab_alerts, Icons.Default.Notifications),
+    MORE("more", R.string.tab_more, Icons.Default.MoreVert),
 }
 
 private const val DETAIL_ARG = "stationId"
@@ -182,6 +185,7 @@ private fun AppNavHost(navController: NavHostController, isDark: Boolean, modifi
         composable(Tab.ALERTS.route) {
             AlertsScreen(viewModel { AlertsViewModel(app.alertRepository, app.stationRepository) }, openDetail)
         }
+        composable(Tab.MORE.route) { MoreScreen() }
         composable("detail/{$DETAIL_ARG}") { entry ->
             val stationId = requireNotNull(entry.arguments?.getString(DETAIL_ARG))
             DetailScreen(viewModel { DetailViewModel(stationId, app.stationRepository, app.alertRepository, app.tankPreferences.litres) })
