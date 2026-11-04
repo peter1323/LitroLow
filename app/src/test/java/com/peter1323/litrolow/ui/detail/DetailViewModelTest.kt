@@ -2,7 +2,9 @@ package com.peter1323.litrolow.ui.detail
 
 import com.peter1323.litrolow.data.api.StationsResponse
 import com.peter1323.litrolow.data.model.FuelType
+import com.peter1323.litrolow.data.repository.AlertRepository
 import com.peter1323.litrolow.data.repository.StationRepository
+import com.peter1323.litrolow.testutil.FakeAlertDao
 import com.peter1323.litrolow.testutil.FakeApi
 import com.peter1323.litrolow.testutil.FakeStationDao
 import com.peter1323.litrolow.testutil.MainDispatcherRule
@@ -23,6 +25,7 @@ class DetailViewModelTest {
     private val api = FakeApi()
     private var clock = 1_000L
     private val repository = StationRepository(api, FakeStationDao(), now = { clock })
+    private val alerts = AlertRepository(FakeAlertDao(), repository)
 
     /** Simula una consulta a la API en la que la gasolinera tiene el precio indicado. */
     private suspend fun consult(price95: String) {
@@ -34,7 +37,7 @@ class DetailViewModelTest {
     /** Cada cambio de precio debe añadir un punto a la gráfica. */
     @Test
     fun `cada cambio de precio anade un punto`() = runTest(mainRule.dispatcher) {
-        val viewModel = DetailViewModel("1", repository)
+        val viewModel = DetailViewModel("1", repository, alerts)
         viewModel.uiState.launchIn(backgroundScope)
         consult("1,500")
         consult("1,450")
@@ -44,7 +47,7 @@ class DetailViewModelTest {
     /** Consultar sin que cambie el precio no debe llenar la base de datos de puntos repetidos. */
     @Test
     fun `precio sin cambios no repite punto`() = runTest(mainRule.dispatcher) {
-        val viewModel = DetailViewModel("1", repository)
+        val viewModel = DetailViewModel("1", repository, alerts)
         viewModel.uiState.launchIn(backgroundScope)
         consult("1,500")
         consult("1,500")
@@ -54,7 +57,7 @@ class DetailViewModelTest {
     /** La gráfica omite los registros sin precio para el combustible elegido. */
     @Test
     fun `la grafica usa el combustible elegido`() = runTest(mainRule.dispatcher) {
-        val viewModel = DetailViewModel("1", repository)
+        val viewModel = DetailViewModel("1", repository, alerts)
         viewModel.uiState.launchIn(backgroundScope)
         consult("1,500")
         viewModel.selectChartFuel(FuelType.GASOLINE_98)
@@ -65,7 +68,7 @@ class DetailViewModelTest {
     /** Una gasolinera que ya no existe no debe romper la pantalla. */
     @Test
     fun `gasolinera inexistente deja de cargar`() = runTest(mainRule.dispatcher) {
-        val viewModel = DetailViewModel("no-existe", repository)
+        val viewModel = DetailViewModel("no-existe", repository, alerts)
         viewModel.uiState.launchIn(backgroundScope)
         assertNull(viewModel.uiState.value.station)
         assertEquals(false, viewModel.uiState.value.isLoading)

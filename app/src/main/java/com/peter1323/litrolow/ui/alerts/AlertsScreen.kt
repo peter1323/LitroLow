@@ -1,0 +1,78 @@
+package com.peter1323.litrolow.ui.alerts
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.peter1323.litrolow.R
+import com.peter1323.litrolow.data.model.PriceAlert
+import com.peter1323.litrolow.ui.components.LoadingView
+import com.peter1323.litrolow.ui.components.MessageView
+import com.peter1323.litrolow.ui.components.formatPrice
+
+/** Lista de alertas de precio, o una explicación de cómo crearlas si aún no hay ninguna. */
+@Composable
+fun AlertsScreen(viewModel: AlertsViewModel, onAlertClick: (String) -> Unit) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    when {
+        state.isLoading -> LoadingView()
+        state.alerts.isEmpty() -> MessageView(stringResource(R.string.empty_alerts))
+        else -> LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item { NotificationsOffNotice() }
+            items(state.alerts, key = { it.id }) { alert ->
+                AlertCard(alert, { onAlertClick(alert.stationId) }, { viewModel.delete(alert.id) })
+            }
+        }
+    }
+}
+
+/** Avisa si las notificaciones están desactivadas, porque las alertas no podrían llegar. */
+@Composable
+private fun NotificationsOffNotice() {
+    if (!NotificationManagerCompat.from(LocalContext.current).areNotificationsEnabled()) {
+        Text(
+            stringResource(R.string.notifications_off),
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+/** Tarjeta de una alerta con su gasolinera, combustible, precio máximo y botón de borrar. */
+@Composable
+private fun AlertCard(alert: PriceAlert, onClick: () -> Unit, onDelete: () -> Unit) {
+    Card(onClick = onClick) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(alert.stationName, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.alert_summary, stringResource(alert.fuel.label), formatPrice(alert.maxPrice)))
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, stringResource(R.string.delete_alert))
+            }
+        }
+    }
+}

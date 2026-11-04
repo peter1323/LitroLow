@@ -54,6 +54,7 @@ fun DetailScreen(viewModel: DetailViewModel) {
             Header(station, state.isFavorite, viewModel::toggleFavorite)
             Prices(station)
             RouteButton(station)
+            CreateAlertButton(station, viewModel::createAlert)
             Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleMedium)
             FuelChips(state.chartFuel, viewModel::selectChartFuel)
             PriceHistoryChart(state.chartPoints)

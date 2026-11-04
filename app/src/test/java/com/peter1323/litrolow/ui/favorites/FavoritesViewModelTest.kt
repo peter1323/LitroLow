@@ -1,6 +1,8 @@
 package com.peter1323.litrolow.ui.favorites
 
+import com.peter1323.litrolow.data.repository.AlertRepository
 import com.peter1323.litrolow.data.repository.StationRepository
+import com.peter1323.litrolow.testutil.FakeAlertDao
 import com.peter1323.litrolow.testutil.FakeApi
 import com.peter1323.litrolow.testutil.FakeStationDao
 import com.peter1323.litrolow.testutil.MainDispatcherRule
@@ -20,11 +22,12 @@ class FavoritesViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private val repository = StationRepository(FakeApi(), FakeStationDao(listOf(station("1"), station("2"))))
+    private val alerts = AlertRepository(FakeAlertDao(), repository)
 
     /** Marcar y desmarcar debe añadir y quitar la gasolinera de la lista. */
     @Test
     fun `alternar favorita actualiza la lista`() = runTest(mainRule.dispatcher) {
-        val detail = DetailViewModel("1", repository)
+        val detail = DetailViewModel("1", repository, alerts)
         val favorites = FavoritesViewModel(repository)
         detail.uiState.launchIn(backgroundScope)
         favorites.uiState.launchIn(backgroundScope)

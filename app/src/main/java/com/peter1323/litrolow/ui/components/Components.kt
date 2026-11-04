@@ -82,13 +82,18 @@ fun MessageView(
 
 /** Fila desplazable de chips para elegir combustible; se comparte entre la lista y el mapa. */
 @Composable
-fun FuelChips(selected: FuelType, onSelect: (FuelType) -> Unit, modifier: Modifier = Modifier) {
+fun FuelChips(
+    selected: FuelType,
+    onSelect: (FuelType) -> Unit,
+    modifier: Modifier = Modifier,
+    fuels: List<FuelType> = FuelType.entries,
+) {
     LazyRow(
         modifier,
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(FuelType.entries) { fuel ->
+        items(fuels) { fuel ->
             FilterChip(
                 selected = fuel == selected,
                 onClick = { onSelect(fuel) },
