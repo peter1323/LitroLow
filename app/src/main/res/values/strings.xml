@@ -47,4 +47,14 @@
     <string name="notifications_off">Las notificaciones están desactivadas: actívalas en los ajustes del móvil para recibir estas alertas.</string>
     <string name="alert_channel_name">Alertas de precio</string>
     <string name="alert_notification_title">¡Precio bajo en %1$s!</string>
+
+    <string name="map_address_hint">Calle, localidad o código postal</string>
+    <string name="map_search">Buscar dirección</string>
+    <string name="map_use_location">Usar mi ubicación</string>
+    <string name="map_explanation">Escribe una dirección o usa tu ubicación para ver las gasolineras cercanas. Tu ubicación solo se usa en el móvil para buscarlas y no se envía ni se guarda.</string>
+    <string name="map_no_stations">No hay gasolineras con este combustible a menos de 10 km.</string>
+    <string name="map_cheapest">La más barata de la zona</string>
+    <string name="map_location_unavailable">No se ha podido obtener tu ubicación. Comprueba que está activada o escribe una dirección.</string>
+    <string name="map_permission_denied">Sin permiso de ubicación. No pasa nada: escribe una dirección arriba, o actívalo en los ajustes del móvil.</string>
+    <string name="map_address_not_found">No hemos encontrado esa dirección. Prueba con la localidad o el código postal.</string>
 </resources>

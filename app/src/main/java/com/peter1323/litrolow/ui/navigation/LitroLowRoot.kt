@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,12 +38,15 @@ import com.peter1323.litrolow.ui.detail.DetailScreen
 import com.peter1323.litrolow.ui.detail.DetailViewModel
 import com.peter1323.litrolow.ui.favorites.FavoritesScreen
 import com.peter1323.litrolow.ui.favorites.FavoritesViewModel
+import com.peter1323.litrolow.ui.map.MapScreen
+import com.peter1323.litrolow.ui.map.MapViewModel
 import com.peter1323.litrolow.ui.stations.StationsScreen
 import com.peter1323.litrolow.ui.stations.StationsViewModel
 
 /** Pestañas de la barra inferior, con su ruta de navegación. */
 private enum class Tab(val route: String, @param:StringRes val label: Int, val icon: ImageVector) {
     STATIONS("stations", R.string.tab_stations, Icons.AutoMirrored.Filled.List),
+    MAP("map", R.string.tab_map, Icons.Default.Place),
     FAVORITES("favorites", R.string.tab_favorites, Icons.Default.Favorite),
     ALERTS("alerts", R.string.tab_alerts, Icons.Default.Notifications),
 }
@@ -60,7 +64,7 @@ fun LitroLowRoot(isDark: Boolean, onToggleTheme: () -> Unit) {
         topBar = { TopBar(isTab, isDark, onToggleTheme, navController::popBackStack) },
         bottomBar = { if (isTab) BottomBar(currentRoute, navController) },
     ) { padding ->
-        AppNavHost(navController, Modifier.padding(padding))
+        AppNavHost(navController, isDark, Modifier.padding(padding))
     }
 }
 
@@ -111,12 +115,22 @@ private fun BottomBar(currentRoute: String?, navController: NavHostController) {
 
 /** Declara todas las pantallas y crea cada ViewModel con sus dependencias. */
 @Composable
-private fun AppNavHost(navController: NavHostController, modifier: Modifier) {
+private fun AppNavHost(navController: NavHostController, isDark: Boolean, modifier: Modifier) {
     val app = LocalContext.current.applicationContext as LitroLowApplication
     val openDetail: (String) -> Unit = { navController.navigate("detail/$it") }
     NavHost(navController, startDestination = Tab.STATIONS.route, modifier = modifier) {
         composable(Tab.STATIONS.route) {
             StationsScreen(viewModel { StationsViewModel(app.stationRepository) }, openDetail)
+        }
+        composable(Tab.MAP.route) {
+            val mapViewModel = viewModel {
+                MapViewModel(
+                    app.stationRepository.stations,
+                    app.locationRepository::currentLocation,
+                    app.locationRepository::geocode,
+                )
+            }
+            MapScreen(mapViewModel, isDark, openDetail)
         }
         composable(Tab.FAVORITES.route) {
             FavoritesScreen(viewModel { FavoritesViewModel(app.stationRepository) }, openDetail)

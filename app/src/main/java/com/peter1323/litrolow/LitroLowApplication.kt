@@ -4,6 +4,7 @@ import android.app.Application
 import com.peter1323.litrolow.data.api.createCarburantesApi
 import com.peter1323.litrolow.data.db.LitroLowDatabase
 import com.peter1323.litrolow.data.repository.AlertRepository
+import com.peter1323.litrolow.data.repository.LocationRepository
 import com.peter1323.litrolow.data.repository.StationRepository
 import com.peter1323.litrolow.data.repository.ThemePreferences
 import com.peter1323.litrolow.worker.PriceAlertWorker
@@ -16,6 +17,7 @@ class LitroLowApplication : Application() {
     private val database by lazy { LitroLowDatabase.create(this) }
     val stationRepository by lazy { StationRepository(createCarburantesApi(), database.stationDao()) }
     val alertRepository by lazy { AlertRepository(database.alertDao(), stationRepository) }
+    val locationRepository by lazy { LocationRepository(this) }
     val themePreferences by lazy { ThemePreferences(this) }
 
     /** Programa la comprobación de alertas al arrancar la app. */

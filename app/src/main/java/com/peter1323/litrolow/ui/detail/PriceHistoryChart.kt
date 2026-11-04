@@ -15,7 +15,7 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.compose.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.peter1323.litrolow.R
@@ -41,7 +41,7 @@ fun PriceHistoryChart(points: List<ChartPoint>) {
     val producer = remember { CartesianChartModelProducer() }
     LaunchedEffect(points) {
         producer.runTransaction {
-            lineSeries { series(points.indices.toList(), points.map { it.price }) }
+            lineModel { series(points.indices.toList(), points.map { it.price }) }
         }
     }
     CartesianChartHost(
