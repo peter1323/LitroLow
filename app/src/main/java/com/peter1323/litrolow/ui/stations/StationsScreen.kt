@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
-import com.peter1323.litrolow.data.model.CENTS_PER_EURO
 import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.ui.components.BrandHeader
 import com.peter1323.litrolow.ui.components.CreateAlertAction
@@ -60,6 +59,9 @@ import com.peter1323.litrolow.ui.theme.BrandGreen
 import com.peter1323.litrolow.ui.theme.OnBrandGreen
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
+
+// Por debajo de medio céntimo, el texto diría que se ahorran 0,00 €.
+private const val MIN_VISIBLE_EUROS = 0.005
 
 /** Pantalla principal: la más barata con su ahorro, buscador, filtros y lista de más barata a más cara. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,26 +115,15 @@ private fun CheapestHeader(station: Station, state: StationsUiState, onSave: (St
     }
 }
 
-/** Con una marca elegida, compara su mejor precio con la gasolinera más barata de todas las marcas de la zona. */
+/** Con una marca elegida, indica cuánto más se ahorra en la más barata de todas; no sale si esa marca ya es la más barata. */
 @Composable
 private fun BrandVersusCheapest(price: Double, state: StationsUiState) {
     val cheapest = state.cheapestAllBrands ?: return
     val cheapestPrice = cheapest.prices.of(state.fuel) ?: return
-    val difference = price - cheapestPrice
+    val extraCost = (price - cheapestPrice) * state.tankLitres
+    if (extraCost < MIN_VISIBLE_EUROS) return
     HeaderNote(
-        if (difference <= 0) {
-            stringResource(R.string.brand_is_cheapest)
-        } else {
-            stringResource(
-                R.string.brand_vs_cheapest,
-                cheapest.brand,
-                formatPrice(cheapestPrice),
-                state.selectedBrand.orEmpty(),
-                formatDecimal(difference * state.tankLitres, 2),
-                state.tankLitres,
-                formatDecimal(difference * CENTS_PER_EURO, 1),
-            )
-        },
+        stringResource(R.string.brand_vs_cheapest, cheapest.brand, formatPrice(cheapestPrice), formatDecimal(extraCost, 2)),
     )
 }
 

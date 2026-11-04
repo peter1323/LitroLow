@@ -13,7 +13,7 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 ## Funcionalidades
 
 - **Lista de gasolineras** con los precios de Gasolina 95, Gasolina 98, Diésel y Diésel Premium, y un distintivo con la inicial y el color de cada marca para reconocerla de un vistazo.
-- **Ahorro en euros**: al buscar una localidad o provincia, la cabecera muestra la más barata de esa zona y lo que ahorras frente a su media, en euros por repostaje y en céntimos por litro, según los litros que sueles echar (de 1 a 200, se cambian desde el icono del surtidor de la barra superior). Si eliges una marca, también la compara con la más barata de todas. Cada ficha indica lo que ahorras o pagas de más frente a la media de su provincia. Las calles con ese nombre en otra provincia aparecen en la lista, pero no se comparan.
+- **Ahorro en euros**: al buscar una localidad o provincia, la cabecera muestra la más barata de esa zona y lo que ahorras frente a su media, en euros por repostaje, según los litros que sueles echar (de 1 a 200, se cambian desde el icono del surtidor de la barra superior). Si eliges una marca, también la compara con la más barata de todas. Cada ficha indica lo que ahorras o pagas de más frente a la media de su provincia. Las calles con ese nombre en otra provincia aparecen en la lista, pero no se comparan.
 - **Semáforo de precios**: verde, ámbar o rojo según lo barato que es cada precio en su zona, también en el mapa y en el detalle.
 - **Acciones directas**: desde la lista puedes marcar una favorita o crear una alerta sin abrir la gasolinera.
 - **Filtros** por marca (sacadas de los datos reales) y por combustible, con orden de menor a mayor precio.
