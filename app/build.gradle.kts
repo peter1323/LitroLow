@@ -29,6 +29,16 @@ android {
         }
     }
 
+    splits {
+        abi {
+            // Una APK por arquitectura de móvil y otra universal que sirve en cualquier dispositivo.
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

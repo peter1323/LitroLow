@@ -94,7 +94,7 @@ app/src/test/                  Tests de ViewModels y conversión de precios
 
 ### Instalar la APK
 
-1. Descarga o copia `LitroLow.apk` en el móvil.
+1. Descarga la APK desde [Releases](https://github.com/peter1323/LitroLow/releases/latest). Si dudas cuál elegir, usa la `universal`, que funciona en cualquier móvil.
 2. Ábrela y permite la instalación desde esa fuente si Android lo pide.
 
 ### Compilar con Android Studio
