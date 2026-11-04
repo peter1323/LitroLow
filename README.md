@@ -6,9 +6,9 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 
 ## Capturas
 
-| Lista | Detalle | Mapa | Alertas |
-|-------|---------|------|---------|
-| `[captura: lista]` | `[captura: detalle]` | `[captura: mapa]` | `[captura: alertas]` |
+| Lista | Detalle | Mapa | Alertas | Más |
+|-------|---------|------|---------|-----|
+| <img src="docs/screenshots/lista.png" alt="Lista de gasolineras" width="170"> | <img src="docs/screenshots/detalle.png" alt="Ficha de una gasolinera" width="170"> | <img src="docs/screenshots/mapa.png" alt="Mapa con los precios" width="170"> | <img src="docs/screenshots/alertas.png" alt="Alertas de precio" width="170"> | <img src="docs/screenshots/mas.png" alt="Pestaña Más" width="170"> |
 
 ## Funcionalidades
 
@@ -25,6 +25,7 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 - **Detalle** con dirección, horario, precios y botón para abrir la ruta en la app de mapas.
 - **Estados claros** de carga, error (sin internet o fallo de la API) y lista vacía. Si falla la red, se muestran los últimos datos guardados.
 - **Tema oscuro por defecto** y tema claro a un toque; la elección se recuerda.
+- **Pestaña Más** con la versión de la app, su creador, los enlaces a GitHub y a las actualizaciones, y las fuentes de los datos.
 
 ## Tecnologías
 
@@ -87,6 +88,7 @@ app/src/main/java/com/peter1323/litrolow/
 │   ├── detail/                Detalle, gráfica y creación de alertas
 │   ├── favorites/             Pantalla y ViewModel de favoritas
 │   ├── map/                   Mapa y su ViewModel
+│   ├── more/                  Pestaña Más: acerca de la app
 │   ├── navigation/            Barras y navegación
 │   ├── stations/              Lista, filtros y su ViewModel
 │   └── theme/                 Paleta de colores
