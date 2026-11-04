@@ -30,6 +30,8 @@
     <string name="add_favorite">Añadir a favoritas</string>
     <string name="remove_favorite">Quitar de favoritas</string>
     <string name="open_route">Cómo llegar</string>
+    <string name="history_title">Evolución del precio</string>
+    <string name="history_not_enough">Todavía no hay datos suficientes. La gráfica se irá completando cuando este precio cambie entre consultas.</string>
     <string name="no_maps_app">No hay ninguna app de mapas instalada.</string>
     <string name="empty_favorites">Aún no tienes favoritas. Abre una gasolinera y pulsa el corazón para guardarla.</string>
 </resources>

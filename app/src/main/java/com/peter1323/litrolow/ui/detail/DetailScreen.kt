@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
 import com.peter1323.litrolow.ui.components.formatPrice
@@ -53,6 +54,9 @@ fun DetailScreen(viewModel: DetailViewModel) {
             Header(station, state.isFavorite, viewModel::toggleFavorite)
             Prices(station)
             RouteButton(station)
+            Text(stringResource(R.string.history_title), style = MaterialTheme.typography.titleMedium)
+            FuelChips(state.chartFuel, viewModel::selectChartFuel)
+            PriceHistoryChart(state.chartPoints)
         }
     }
 }
