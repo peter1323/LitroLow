@@ -4,4 +4,24 @@
     <string name="fuel_98">Gasolina 98</string>
     <string name="fuel_diesel">Diésel</string>
     <string name="fuel_diesel_premium">Diésel Premium</string>
+
+    <string name="tab_stations">Gasolineras</string>
+    <string name="tab_map">Mapa</string>
+    <string name="tab_favorites">Favoritas</string>
+    <string name="tab_alerts">Alertas</string>
+    <string name="theme_to_light">Cambiar a tema claro</string>
+    <string name="theme_to_dark">Cambiar a tema oscuro</string>
+    <string name="back">Volver</string>
+    <string name="retry">Reintentar</string>
+    <string name="loading">Cargando precios…</string>
+    <string name="price_format">%.3f €</string>
+    <string name="no_price">—</string>
+
+    <string name="error_no_internet">Sin conexión a internet. Comprueba tu red e inténtalo de nuevo.</string>
+    <string name="error_api">El servicio de precios no responde ahora mismo. Inténtalo más tarde.</string>
+    <string name="showing_saved_data">Mostrando los últimos datos guardados.</string>
+
+    <string name="search_hint">Buscar localidad, dirección o marca</string>
+    <string name="all_brands">Todas</string>
+    <string name="empty_stations">Ninguna gasolinera coincide con estos filtros.</string>
 </resources>

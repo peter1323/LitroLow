@@ -1,34 +1,42 @@
 package com.peter1323.litrolow
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.peter1323.litrolow.ui.navigation.LitroLowRoot
 import com.peter1323.litrolow.ui.theme.LitroLowTheme
 
 /** Única Activity de la app: muestra el splash y aloja toda la interfaz de Compose. */
 class MainActivity : ComponentActivity() {
 
-    /** Instala el splash antes de crear la vista, como exige la API SplashScreen. */
+    /** Instala el splash antes de crear la vista, como exige la API SplashScreen, y aplica el tema guardado. */
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        val themePreferences = (application as LitroLowApplication).themePreferences
         setContent {
-            LitroLowTheme(darkTheme = true) {
-                Surface(color = MaterialTheme.colorScheme.background) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.app_name))
-                    }
-                }
+            val isDark by themePreferences.isDark.collectAsStateWithLifecycle()
+            LaunchedEffect(isDark) { applySystemBars(isDark) }
+            LitroLowTheme(isDark) {
+                LitroLowRoot(isDark, themePreferences::toggle)
             }
         }
+    }
+
+    /** Ajusta los iconos del sistema al tema de la app, que puede no coincidir con el del móvil. */
+    private fun applySystemBars(isDark: Boolean) {
+        val style = if (isDark) {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
     }
 }
