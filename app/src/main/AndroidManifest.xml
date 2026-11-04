@@ -15,6 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LitroLow.Splash">
 
+        <meta-data
+            android:name="copyright"
+            android:value="Copyright © 2026 peter1323. Todos los derechos reservados." />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -133,3 +133,7 @@ Las tres APK quedan en `app/build/outputs/apk/release/`. Se firman con la clave 
 - **Mapas:** © colaboradores de [OpenStreetMap](https://www.openstreetmap.org/copyright).
 
 Los nombres de las marcas son los que publica el Ministerio. LitroLow no tiene relación con el Ministerio ni con ninguna de estas marcas.
+
+## Autoría
+
+Copyright © 2026 peter1323. Todos los derechos reservados. No se permite copiar, modificar ni redistribuir esta app o su código sin permiso del autor; consulta el archivo [LICENSE](LICENSE).
