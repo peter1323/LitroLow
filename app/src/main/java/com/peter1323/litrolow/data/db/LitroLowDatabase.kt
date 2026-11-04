@@ -20,7 +20,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface StationDao {
 
-    /** Observa todas las gasolineras; la lista se actualiza sola cuando cambian los datos. */
+    /**
+     * Observa todas las gasolineras; la lista se actualiza sola cuando cambian los datos. Son miles de filas que
+     * se leen por tramos: sin transacción, una escritura a medio camino cierra la app al leer el tramo siguiente.
+     */
+    @Transaction
     @Query("SELECT * FROM stations")
     fun observeAll(): Flow<List<Station>>
 
@@ -28,7 +32,8 @@ interface StationDao {
     @Query("SELECT * FROM stations WHERE id = :id")
     fun observeById(id: String): Flow<Station?>
 
-    /** Lee todas las gasolineras una vez, para compararlas con los datos nuevos. */
+    /** Lee todas las gasolineras una vez, para compararlas con los datos nuevos; va en transacción por lo mismo. */
+    @Transaction
     @Query("SELECT * FROM stations")
     suspend fun getAll(): List<Station>
 
