@@ -89,6 +89,33 @@ class StationsViewModelTest {
         assertEquals("SALAMANCA", state.zoneName)
     }
 
+    /** Con una marca elegida, la media es la de esa marca, pero el color y la más barata tienen en cuenta todas. */
+    @Test
+    fun `con marca elegida compara tambien con todas las marcas`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(
+            station("barata", brand = "EURONOR", province = "SALAMANCA", price95 = 1.5),
+            station("r1", brand = "REPSOL", province = "SALAMANCA", price95 = 1.7),
+            station("r2", brand = "REPSOL", province = "SALAMANCA", price95 = 1.9),
+        )
+        viewModel.uiState.launchIn(backgroundScope)
+        viewModel.updateQuery("salamanca")
+        viewModel.selectBrand("REPSOL")
+        val state = viewModel.uiState.value
+        assertEquals(listOf("r1", "r2"), state.stations.map { it.id })
+        assertEquals(1.8, state.comparison!!.average, 0.0001)
+        assertEquals(1.5, state.allBrandsComparison!!.min, 0.0001)
+        assertEquals("barata", state.cheapestAllBrands!!.id)
+    }
+
+    /** Sin marca elegida no hay nada más con lo que comparar. */
+    @Test
+    fun `sin marca elegida no anade otra comparacion`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModelWith(station("1", price95 = 1.5), station("2", price95 = 1.7))
+        viewModel.uiState.launchIn(backgroundScope)
+        assertEquals(null, viewModel.uiState.value.cheapestAllBrands)
+        assertEquals(viewModel.uiState.value.comparison, viewModel.uiState.value.allBrandsComparison)
+    }
+
     /** Una localidad que existe en dos provincias no se puede comparar como una sola zona. */
     @Test
     fun `no compara una localidad repetida en dos provincias`() = runTest(mainRule.dispatcher) {

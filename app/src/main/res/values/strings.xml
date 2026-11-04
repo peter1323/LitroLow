@@ -24,7 +24,13 @@
     <string name="hero_cheapest_in">La más barata en %1$s</string>
     <string name="hero_cheapest_search">La más barata de tu búsqueda</string>
     <string name="hero_cheapest_spain">La más barata de España</string>
-    <string name="hero_savings">Ahorras %1$s € al llenar %2$d L frente a la media</string>
+    <string name="hero_cheapest_brand_in">La más barata de %1$s en %2$s</string>
+    <string name="zone_with_brand">%1$s en %2$s</string>
+    <string name="savings_below_average">Ahorras %1$s € al repostar %2$d L\n%3$s céntimos menos por litro que la media de %4$s</string>
+    <string name="savings_above_average">Pagas %1$s € más al repostar %2$d L\n%3$s céntimos más por litro que la media de %4$s</string>
+    <string name="price_at_average">Precio en la media de %1$s</string>
+    <string name="brand_vs_cheapest">La más barata de todas las marcas: %1$s, %2$s\nCon %3$s pagas %4$s € más al repostar %5$d L\n%6$s céntimos más por litro</string>
+    <string name="brand_is_cheapest">También es la más barata de todas las marcas</string>
     <string name="hero_search_hint">Busca tu localidad para ver cuánto ahorras</string>
     <string name="hero_mixed_zones">Estos resultados son de varias provincias: escribe una localidad o provincia para ver cuánto ahorras</string>
     <string name="hero_single_station">No hay otra gasolinera en esta zona con la que comparar</string>
@@ -32,9 +38,6 @@
     <string name="tank_question">¿Cuántos litros sueles echar al repostar?</string>
     <string name="tank_litres">Litros</string>
     <string name="tank_invalid">Escribe un número entero de 1 a 200 litros</string>
-    <string name="detail_savings">%1$s: ahorras %2$s € al llenar %3$d L frente a la media de %4$s</string>
-    <string name="detail_extra">%1$s: pagas %2$s € más al llenar %3$d L frente a la media de %4$s</string>
-    <string name="detail_average">%1$s: en la media de %2$s</string>
     <string name="alerts_met_count">Cumplidas: %1$d de %2$d</string>
     <string name="alert_met">Cumplida</string>
     <string name="alert_cents_left">Faltan %1$s cts</string>
@@ -57,7 +60,7 @@
     <string name="alert_max_price">Avísame si baja de (€/litro)</string>
     <string name="alert_invalid_price">Escribe un precio de hasta 10 €, por ejemplo 1,45</string>
     <string name="alert_duplicate">Ya tienes esta misma alerta en esta gasolinera.</string>
-    <string name="alert_saved">Alerta guardada. Comprobamos los precios cada pocas horas.</string>
+    <string name="alert_saved">Alerta guardada. Comprobamos los precios cada hora.</string>
     <string name="save">Guardar</string>
     <string name="cancel">Cancelar</string>
     <string name="delete_alert">Borrar alerta</string>

@@ -40,14 +40,10 @@ import com.peter1323.litrolow.ui.components.FuelChips
 import com.peter1323.litrolow.ui.components.LoadingView
 import com.peter1323.litrolow.ui.components.MessageView
 import com.peter1323.litrolow.ui.components.PricePill
-import com.peter1323.litrolow.ui.components.formatDecimal
 import com.peter1323.litrolow.ui.components.formatPrice
+import com.peter1323.litrolow.ui.components.savingsText
 import com.peter1323.litrolow.ui.theme.BrandGreen
 import com.peter1323.litrolow.ui.theme.OnBrandGreen
-import kotlin.math.abs
-
-// Por debajo de medio céntimo, el resultado se redondearía a 0,00 €.
-private const val MIN_VISIBLE_SAVINGS = 0.005
 
 /** Pantalla con toda la información de una gasolinera. */
 @Composable
@@ -76,7 +72,7 @@ fun DetailScreen(viewModel: DetailViewModel) {
     }
 }
 
-/** Cabecera verde con marca, dirección, horario, botón de favorita y lo que se ahorra frente a la localidad. */
+/** Cabecera verde con marca, dirección, horario, botón de favorita y lo que se ahorra o se paga de más en su provincia. */
 @Composable
 private fun Header(station: Station, state: DetailUiState, onToggleFavorite: () -> Unit) {
     BrandHeader {
@@ -89,7 +85,7 @@ private fun Header(station: Station, state: DetailUiState, onToggleFavorite: () 
             }
             FavoriteButton(state.isFavorite, OnBrandGreen, onToggleFavorite)
         }
-        savingsText(station, state)?.let { text ->
+        stationSavingsText(station, state)?.let { text ->
             Surface(
                 Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(8.dp),
@@ -102,22 +98,15 @@ private fun Header(station: Station, state: DetailUiState, onToggleFavorite: () 
     }
 }
 
-/** Texto del ahorro con el combustible de la gráfica, o null si en su localidad no hay con qué compararlo. */
+/** Texto con el combustible de la gráfica frente a su provincia, o null si esta gasolinera no lo vende o no hay con qué compararlo. */
 @Composable
-private fun savingsText(station: Station, state: DetailUiState): String? {
+private fun stationSavingsText(station: Station, state: DetailUiState): String? {
     val price = station.prices.of(state.chartFuel) ?: return null
     val comparison = state.comparisons[state.chartFuel] ?: return null
-    val fuel = stringResource(state.chartFuel.label)
-    val savings = comparison.savings(price, state.tankLitres)
-    val amount = formatDecimal(abs(savings), 2)
-    return when {
-        abs(savings) < MIN_VISIBLE_SAVINGS -> stringResource(R.string.detail_average, fuel, station.locality)
-        savings > 0 -> stringResource(R.string.detail_savings, fuel, amount, state.tankLitres, station.locality)
-        else -> stringResource(R.string.detail_extra, fuel, amount, state.tankLitres, station.locality)
-    }
+    return "${stringResource(state.chartFuel.label)}\n${savingsText(price, comparison, state.tankLitres, station.province)}"
 }
 
-/** Precios de cada combustible, coloreados según lo baratos que son en su localidad. */
+/** Precios de cada combustible, coloreados según lo baratos que son en su provincia. */
 @Composable
 private fun Prices(station: Station, state: DetailUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

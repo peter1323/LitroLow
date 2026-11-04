@@ -3,6 +3,8 @@ package com.peter1323.litrolow.data.model
 /** Litros que se suponen hasta que el usuario indica los que suele echar; el texto siempre muestra la cifra usada. */
 const val DEFAULT_TANK_LITRES = 40
 
+const val CENTS_PER_EURO = 100
+
 private const val MIN_TANK_LITRES = 1
 
 // Cubre desde motos hasta furgonetas grandes y rechaza erratas como 4000.
@@ -31,6 +33,9 @@ data class PriceComparison(val min: Double, val max: Double, val average: Double
 
     /** Euros que se ahorran frente a la media al echar esos litros; es negativo si sale más caro. */
     fun savings(price: Double, litres: Int): Double = (average - price) * litres
+
+    /** Céntimos por litro que un precio está por debajo de la media; es negativo si está por encima. */
+    fun centsBelowAverage(price: Double): Double = (average - price) * CENTS_PER_EURO
 }
 
 /** Calcula las referencias de una zona; con menos de dos precios no hay nada que comparar. */

@@ -36,13 +36,13 @@ class DetailViewModelTest {
         repository.refreshAll()
     }
 
-    /** El ahorro se calcula solo con las gasolineras de su localidad y con los litros indicados. */
+    /** Aunque sea la única de su localidad se compara con su provincia, no con otras, y con los litros indicados. */
     @Test
-    fun `compara con su localidad`() = runTest(mainRule.dispatcher) {
+    fun `compara con su provincia`() = runTest(mainRule.dispatcher) {
         val saved = listOf(
-            station("1", price95 = 1.4),
-            station("2", price95 = 1.6),
-            station("3", locality = "OTRA", price95 = 1.0),
+            station("1", locality = "PUEBLO", price95 = 1.4),
+            station("2", locality = "CAPITAL", price95 = 1.6),
+            station("3", province = "OTRA", price95 = 1.0),
         )
         val local = StationRepository(FakeApi(), FakeStationDao(saved), now = { 0 })
         val viewModel = DetailViewModel("1", local, AlertRepository(FakeAlertDao(), local), flowOf(50))

@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 /** Un punto de la gráfica: un precio y cuándo se registró. */
 data class ChartPoint(val recordedAt: Long, val price: Double)
 
-/** Estado de la pantalla de detalle. [comparisons] tiene los combustibles que se pueden comparar en su localidad. */
+/** Estado de la pantalla de detalle. [comparisons] tiene los combustibles que se pueden comparar en su provincia. */
 data class DetailUiState(
     val isLoading: Boolean = true,
     val station: Station? = null,
@@ -45,7 +45,7 @@ class DetailViewModel(
 
     // Va aparte para no volver a recorrer todas las gasolineras cada vez que se cambia el combustible de la gráfica.
     private val comparisons = combine(repository.station(stationId), repository.stations) { station, stations ->
-        station?.let { compareInLocality(it, stations) }.orEmpty()
+        station?.let { compareInProvince(it, stations) }.orEmpty()
     }
     private val stationInfo = combine(repository.station(stationId), comparisons, tankLitres) { station, comparisons, litres ->
         Triple(station, comparisons, litres)
@@ -86,11 +86,11 @@ class DetailViewModel(
     private fun List<PricePoint>.toChartPoints(fuel: FuelType): List<ChartPoint> =
         mapNotNull { point -> point.prices.of(fuel)?.let { ChartPoint(point.recordedAt, it) } }
 
-    /** Calcula las referencias de cada combustible entre las gasolineras de la misma localidad. */
-    private fun compareInLocality(station: Station, stations: List<Station>): Map<FuelType, PriceComparison> {
-        val local = stations.filter { it.locality == station.locality && it.province == station.province }
+    /** Calcula las referencias de cada combustible en la provincia: muchas localidades tienen una sola gasolinera. */
+    private fun compareInProvince(station: Station, stations: List<Station>): Map<FuelType, PriceComparison> {
+        val province = stations.filter { it.province == station.province }
         return FuelType.entries.mapNotNull { fuel ->
-            comparePrices(local.mapNotNull { it.prices.of(fuel) })?.let { fuel to it }
+            comparePrices(province.mapNotNull { it.prices.of(fuel) })?.let { fuel to it }
         }.toMap()
     }
 }

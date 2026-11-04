@@ -12,7 +12,7 @@ import com.peter1323.litrolow.LitroLowApplication
 import java.util.concurrent.TimeUnit
 
 private const val WORK_NAME = "price_alert_check"
-private const val CHECK_INTERVAL_HOURS = 3L
+private const val CHECK_INTERVAL_HOURS = 1L
 
 /** Tarea en segundo plano que comprueba las alertas aunque la app esté cerrada. */
 class PriceAlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -29,13 +29,13 @@ class PriceAlertWorker(context: Context, params: WorkerParameters) : CoroutineWo
     }
 
     companion object {
-        /** Programa la comprobación periódica; KEEP evita reiniciar el contador en cada arranque de la app. */
+        /** Programa la comprobación periódica; UPDATE aplica el intervalo a quien actualiza la app sin reiniciar el contador. */
         fun schedule(context: Context) {
             val request = PeriodicWorkRequestBuilder<PriceAlertWorker>(CHECK_INTERVAL_HOURS, TimeUnit.HOURS)
                 .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
                 .build()
             WorkManager.getInstance(context)
-                .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+                .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
         }
     }
 }

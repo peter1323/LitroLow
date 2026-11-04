@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
+import com.peter1323.litrolow.data.model.CENTS_PER_EURO
 import com.peter1323.litrolow.data.model.Station
 import com.peter1323.litrolow.ui.components.BrandHeader
 import com.peter1323.litrolow.ui.components.CreateAlertAction
@@ -53,6 +54,7 @@ import com.peter1323.litrolow.ui.components.TankDialog
 import com.peter1323.litrolow.ui.components.formatDecimal
 import com.peter1323.litrolow.ui.components.formatPrice
 import com.peter1323.litrolow.ui.components.message
+import com.peter1323.litrolow.ui.components.savingsText
 import com.peter1323.litrolow.ui.components.selectedChipColors
 import com.peter1323.litrolow.ui.theme.BrandGreen
 import com.peter1323.litrolow.ui.theme.OnBrandGreen
@@ -84,6 +86,8 @@ fun StationsScreen(viewModel: StationsViewModel, onStationClick: (String) -> Uni
 private fun CheapestHeader(station: Station, state: StationsUiState, onSave: (String) -> Boolean, onClick: () -> Unit) {
     val price = station.prices.of(state.fuel)
     val title = when {
+        state.zoneName != null && state.selectedBrand != null ->
+            stringResource(R.string.hero_cheapest_brand_in, state.selectedBrand, state.zoneName)
         state.zoneName != null -> stringResource(R.string.hero_cheapest_in, state.zoneName)
         state.isFiltered -> stringResource(R.string.hero_cheapest_search)
         else -> stringResource(R.string.hero_cheapest_spain)
@@ -92,8 +96,8 @@ private fun CheapestHeader(station: Station, state: StationsUiState, onSave: (St
         Text(title, style = MaterialTheme.typography.labelLarge)
         Text(formatPrice(price), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
         Text("${station.brand} · ${stringResource(state.fuel.label)}", style = MaterialTheme.typography.bodyMedium)
-        val savings = if (price != null) state.comparison?.savings(price, state.tankLitres) else null
-        if (savings == null) {
+        val comparison = state.comparison
+        if (price == null || comparison == null) {
             val hint = when {
                 state.zoneName != null -> R.string.hero_single_station
                 state.isFiltered -> R.string.hero_mixed_zones
@@ -101,16 +105,42 @@ private fun CheapestHeader(station: Station, state: StationsUiState, onSave: (St
             }
             HeaderNote(stringResource(hint))
         } else {
-            EditableSavings(formatDecimal(savings, 2), state.tankLitres, onSave)
+            val zone = state.zoneName.orEmpty()
+            val comparedZone = state.selectedBrand?.let { stringResource(R.string.zone_with_brand, it, zone) } ?: zone
+            EditableSavings(savingsText(price, comparison, state.tankLitres, comparedZone), state.tankLitres, onSave)
         }
+        price?.let { BrandVersusCheapest(it, state) }
     }
+}
+
+/** Con una marca elegida, compara su mejor precio con la gasolinera más barata de todas las marcas de la zona. */
+@Composable
+private fun BrandVersusCheapest(price: Double, state: StationsUiState) {
+    val cheapest = state.cheapestAllBrands ?: return
+    val cheapestPrice = cheapest.prices.of(state.fuel) ?: return
+    val difference = price - cheapestPrice
+    HeaderNote(
+        if (difference <= 0) {
+            stringResource(R.string.brand_is_cheapest)
+        } else {
+            stringResource(
+                R.string.brand_vs_cheapest,
+                cheapest.brand,
+                formatPrice(cheapestPrice),
+                state.selectedBrand.orEmpty(),
+                formatDecimal(difference * state.tankLitres, 2),
+                state.tankLitres,
+                formatDecimal(difference * CENTS_PER_EURO, 1),
+            )
+        },
+    )
 }
 
 /** Nota del ahorro; al tocarla se pueden cambiar los litros del depósito. */
 @Composable
-private fun EditableSavings(savings: String, litres: Int, onSave: (String) -> Boolean) {
+private fun EditableSavings(text: String, litres: Int, onSave: (String) -> Boolean) {
     var isEditing by rememberSaveable { mutableStateOf(false) }
-    HeaderNote(stringResource(R.string.hero_savings, savings, litres), Modifier.clickable { isEditing = true }, isEditable = true)
+    HeaderNote(text, Modifier.clickable { isEditing = true }, isEditable = true)
     if (isEditing) TankDialog(litres, onSave) { isEditing = false }
 }
 
@@ -219,7 +249,7 @@ private fun StationList(state: StationsUiState, query: String, viewModel: Statio
                 { onStationClick(station.id) },
                 Modifier.padding(horizontal = 16.dp),
                 state.fuel,
-                state.comparison.takeIf { station.id in state.zoneIds },
+                state.allBrandsComparison.takeIf { station.id in state.zoneIds },
             ) {
                 FavoriteButton(station.id in state.favoriteIds) { viewModel.toggleFavorite(station.id) }
                 AlertIconButton(station, station.id in state.stationIdsWithAlert, viewModel)

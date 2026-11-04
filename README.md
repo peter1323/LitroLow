@@ -13,14 +13,14 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 ## Funcionalidades
 
 - **Lista de gasolineras** con los precios de Gasolina 95, Gasolina 98, Diésel y Diésel Premium, y un distintivo con la inicial y el color de cada marca para reconocerla de un vistazo.
-- **Ahorro en euros**: al buscar una localidad o provincia, la cabecera muestra la más barata de esa zona y lo que ahorras frente a su media, según los litros que sueles echar (de 1 a 200, se cambian desde el icono del surtidor de la barra superior). Las calles con ese nombre en otra provincia aparecen en la lista, pero no se comparan.
+- **Ahorro en euros**: al buscar una localidad o provincia, la cabecera muestra la más barata de esa zona y lo que ahorras frente a su media, en euros por repostaje y en céntimos por litro, según los litros que sueles echar (de 1 a 200, se cambian desde el icono del surtidor de la barra superior). Si eliges una marca, también la compara con la más barata de todas. Cada ficha indica lo que ahorras o pagas de más frente a la media de su provincia. Las calles con ese nombre en otra provincia aparecen en la lista, pero no se comparan.
 - **Semáforo de precios**: verde, ámbar o rojo según lo barato que es cada precio en su zona, también en el mapa y en el detalle.
 - **Acciones directas**: desde la lista puedes marcar una favorita o crear una alerta sin abrir la gasolinera.
 - **Filtros** por marca (sacadas de los datos reales) y por combustible, con orden de menor a mayor precio.
 - **Búsqueda** por localidad, dirección o marca, sin distinguir tildes ni mayúsculas.
 - **Mapa con OpenStreetMap**: muestra las gasolineras a menos de 10 km con su precio sobre el mapa y destaca la más barata. Funciona con tu ubicación o escribiendo una dirección, así que el permiso de ubicación es opcional.
 - **Historial de precios** de cada gasolinera en una gráfica.
-- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple. Los precios se comprueban cada 3 horas aunque la app esté cerrada. Cada alerta indica su precio actual y si está cumplida o cuánto le falta. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
+- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple. Los precios se comprueban cada hora aproximadamente aunque la app esté cerrada. Cada alerta indica su precio actual y si está cumplida o cuánto le falta. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
 - **Favoritas** guardadas en el móvil, que se quitan con un toque desde su propia lista.
 - **Detalle** con dirección, horario, precios y botón para abrir la ruta en la app de mapas.
 - **Estados claros** de carga, error (sin internet o fallo de la API) y lista vacía. Si falla la red, se muestran los últimos datos guardados.

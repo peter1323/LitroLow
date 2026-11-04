@@ -53,11 +53,15 @@ import com.peter1323.litrolow.ui.theme.colors
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import kotlin.math.abs
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es-ES")
 
 // Evita que un precio casi igual al más barato deje una barra invisible.
 private const val MIN_BAR_FRACTION = 0.05f
+
+// Por debajo se mostraría "0,0 céntimos": a efectos prácticos, ese precio está en la media.
+private const val MIN_VISIBLE_CENTS = 0.05
 
 /** Texto de cada error de carga, para que todas las pantallas expliquen lo mismo. */
 @get:StringRes
@@ -83,6 +87,19 @@ fun formatAlertPrice(price: Double): String =
 /** Escribe una cantidad con coma y los decimales indicados, como "3,60". */
 fun formatDecimal(value: Double, decimals: Int): String =
     String.format(SpanishLocale, "%.${decimals}f", value)
+
+/** Explica un precio frente a la media de [zone]: el total del repostaje en euros y la diferencia en céntimos por litro. */
+@Composable
+fun savingsText(price: Double, comparison: PriceComparison, litres: Int, zone: String): String {
+    val cents = comparison.centsBelowAverage(price)
+    val total = formatDecimal(abs(comparison.savings(price, litres)), 2)
+    val perLitre = formatDecimal(abs(cents), 1)
+    return when {
+        abs(cents) < MIN_VISIBLE_CENTS -> stringResource(R.string.price_at_average, zone)
+        cents > 0 -> stringResource(R.string.savings_below_average, total, litres, perLitre, zone)
+        else -> stringResource(R.string.savings_above_average, total, litres, perLitre, zone)
+    }
+}
 
 /** Indicador de carga a pantalla completa. */
 @Composable

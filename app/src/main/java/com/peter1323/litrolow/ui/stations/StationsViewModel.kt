@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
 /**
  * Estado completo de la pantalla de lista. [comparison] y [zoneName] se refieren a [zoneIds], las gasolineras
  * de la zona buscada; el resto de resultados, como una calle con ese nombre en otra provincia, no se compara.
+ * [allBrandsComparison] ignora el filtro de marca, para que el color de un precio no cambie al filtrar, y
+ * [cheapestAllBrands] es la más barata de la zona cuando hay una marca elegida.
  */
 data class StationsUiState(
     val isLoading: Boolean = true,
@@ -44,6 +46,8 @@ data class StationsUiState(
     val stationIdsWithAlert: Set<String> = emptySet(),
     val zoneIds: Set<String> = emptySet(),
     val comparison: PriceComparison? = null,
+    val allBrandsComparison: PriceComparison? = null,
+    val cheapestAllBrands: Station? = null,
     val zoneName: String? = null,
     val isFiltered: Boolean = false,
     val tankLitres: Int = DEFAULT_TANK_LITRES,
@@ -78,6 +82,8 @@ class StationsViewModel(
             val filtered = stations.filterAndSort(brand, fuel, query)
             val zone = filtered.comparableZone(query)
             val zoneIds = zone.map { it.id }.toSet()
+            val comparison = comparePrices(zone.mapNotNull { it.prices.of(fuel) })
+            val allBrandsZone = if (brand == null) zone else stations.filterAndSort(null, fuel, query).comparableZone(query)
             StationsUiState(
                 favoriteIds = favoriteIds,
                 stationIdsWithAlert = alertIds,
@@ -90,7 +96,9 @@ class StationsViewModel(
                 brands = popularBrands(stations),
                 selectedBrand = brand,
                 fuel = fuel,
-                comparison = comparePrices(zone.mapNotNull { it.prices.of(fuel) }),
+                comparison = comparison,
+                allBrandsComparison = comparePrices(allBrandsZone.mapNotNull { it.prices.of(fuel) }) ?: comparison,
+                cheapestAllBrands = allBrandsZone.firstOrNull().takeIf { brand != null },
                 zoneName = zone.takeIf { it.isNotEmpty() }?.zoneName(),
                 isFiltered = brand != null || query.isNotBlank(),
                 tankLitres = litres,

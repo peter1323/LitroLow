@@ -29,6 +29,13 @@ class PriceComparisonTest {
         assertEquals(-2.0, comparison.savings(1.55, 40), 0.0001)
     }
 
+    /** La diferencia por litro se da en céntimos, y negativa si sale más caro que la media. */
+    @Test
+    fun `calcula los centimos por litro frente a la media`() {
+        assertEquals(10.0, comparison.centsBelowAverage(1.40), 0.0001)
+        assertEquals(-5.0, comparison.centsBelowAverage(1.55), 0.0001)
+    }
+
     /** Con una sola gasolinera no hay nada con lo que comparar. */
     @Test
     fun `necesita al menos dos precios`() {
