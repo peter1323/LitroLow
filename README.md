@@ -10,13 +10,14 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 
 ## Funcionalidades
 
-- **Lista de gasolineras** con los precios de Gasolina 95, Gasolina 98, Diésel y Diésel Premium.
+- **Lista de gasolineras** con los precios de Gasolina 95, Gasolina 98, Diésel y Diésel Premium, y un distintivo con la inicial y el color de cada marca para reconocerla de un vistazo.
+- **Acciones directas**: desde la lista puedes marcar una favorita o crear una alerta sin abrir la gasolinera.
 - **Filtros** por marca (sacadas de los datos reales) y por combustible, con orden de menor a mayor precio.
 - **Búsqueda** por localidad, dirección o marca, sin distinguir tildes ni mayúsculas.
 - **Mapa con OpenStreetMap**: muestra las gasolineras a menos de 10 km y destaca la más barata. Funciona con tu ubicación o escribiendo una dirección, así que el permiso de ubicación es opcional.
 - **Historial de precios** de cada gasolinera en una gráfica.
-- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple.
-- **Favoritas** guardadas en el móvil.
+- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple. Los precios se comprueban cada 3 horas aunque la app esté cerrada. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
+- **Favoritas** guardadas en el móvil, que se quitan con un toque desde su propia lista.
 - **Detalle** con dirección, horario, precios y botón para abrir la ruta en la app de mapas.
 - **Estados claros** de carga, error (sin internet o fallo de la API) y lista vacía. Si falla la red, se muestran los últimos datos guardados.
 - **Tema oscuro por defecto** y tema claro a un toque; la elección se recuerda.
@@ -94,8 +95,15 @@ app/src/test/                  Tests de ViewModels y conversión de precios
 
 ### Instalar la APK
 
-1. Descarga la APK desde [Releases](https://github.com/peter1323/LitroLow/releases/latest). Si dudas cuál elegir, usa la `universal`, que funciona en cualquier móvil.
-2. Ábrela y permite la instalación desde esa fuente si Android lo pide.
+1. Descarga la APK desde [Releases](https://github.com/peter1323/LitroLow/releases/latest):
+
+   | Archivo | Para qué dispositivo |
+   |---------|----------------------|
+   | `universal` | Cualquiera. Es la opción recomendada si tienes dudas |
+   | `arm64-v8a` | La mayoría de móviles actuales |
+   | `armeabi-v7a` | Móviles antiguos de 32 bits |
+
+2. Ábrela en el móvil y permite la instalación desde esa fuente si Android lo pide.
 
 ### Compilar con Android Studio
 
@@ -113,7 +121,7 @@ También se puede hacer desde la terminal:
 ./gradlew testDebugUnitTest
 ```
 
-La APK queda en `app/build/outputs/apk/release/`. Se firma con la clave de depuración para poder instalarla sin configurar nada; para publicarla en Google Play habría que usar una clave propia.
+Las tres APK quedan en `app/build/outputs/apk/release/`. Se firman con la clave de depuración para poder instalarlas sin configurar nada; para publicarla en Google Play habría que usar una clave propia.
 
 ## Fuente de los datos
 
