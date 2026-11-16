@@ -9,6 +9,7 @@ import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.peter1323.litrolow.data.model.GeoPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -63,6 +64,10 @@ class LocationRepository(private val context: Context) {
                 geocodeBlocking(geocoder, query)
             }
         } catch (_: IOException) {
+            null
+        } catch (e: RuntimeException) {
+            if (e is CancellationException) throw e
+            // Algunos fabricantes, como Realme con Android 16, devuelven errores internos de su servicio de geocodificación.
             null
         }
     }
