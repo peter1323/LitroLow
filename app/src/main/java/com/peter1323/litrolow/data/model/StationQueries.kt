@@ -25,9 +25,21 @@ fun popularBrands(stations: List<Station>): List<String> =
 fun normalizeText(text: String): String =
     Normalizer.normalize(text, Normalizer.Form.NFD).replace(ACCENT_MARKS, "").lowercase()
 
+/**
+ * Normaliza una localidad o provincia y le añade su forma natural: el Ministerio escribe «PALMAS (LAS)» o
+ * «CORUÑA (A)», y así también se encuentran buscando «las palmas» o «a coruña».
+ */
+fun searchableName(name: String): String {
+    val normalized = normalizeText(name)
+    val open = normalized.lastIndexOf(" (")
+    if (open < 0 || !normalized.endsWith(")")) return normalized
+    return "$normalized ${normalized.substring(open + 2, normalized.length - 1)} ${normalized.substring(0, open)}"
+}
+
 /** Indica si la gasolinera coincide con un texto ya normalizado por localidad, dirección, provincia o marca. */
 fun Station.matches(normalizedQuery: String): Boolean =
-    listOf(locality, address, province, brand).any { normalizeText(it).contains(normalizedQuery) }
+    searchableName(locality).contains(normalizedQuery) || searchableName(province).contains(normalizedQuery) ||
+        normalizeText(address).contains(normalizedQuery) || normalizeText(brand).contains(normalizedQuery)
 
 /**
  * Aplica los filtros y ordena de más barata a más cara. Las gasolineras sin ese combustible
@@ -49,8 +61,8 @@ fun List<Station>.filterAndSort(brand: String?, fuel: FuelType, query: String): 
  */
 fun List<Station>.comparableZone(query: String): List<Station> {
     val normalizedQuery = normalizeText(query.trim())
-    val inProvince = filter { normalizeText(it.province).contains(normalizedQuery) }
-    val inLocality = filter { normalizeText(it.locality).contains(normalizedQuery) }
+    val inProvince = filter { searchableName(it.province).contains(normalizedQuery) }
+    val inLocality = filter { searchableName(it.locality).contains(normalizedQuery) }
     val zone = inProvince.ifEmpty { inLocality }.ifEmpty { this }
     return if (zone.distinctBy { it.province }.size == 1) zone else emptyList()
 }
