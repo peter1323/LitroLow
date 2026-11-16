@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -57,8 +58,12 @@ import com.peter1323.litrolow.ui.components.savingsText
 import com.peter1323.litrolow.ui.components.selectedChipColors
 import com.peter1323.litrolow.ui.theme.BrandGreen
 import com.peter1323.litrolow.ui.theme.OnBrandGreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
+
+private const val MINUTE_MS = 60_000L
+private const val MINUTES_PER_HOUR = 60
 
 // Por debajo de medio céntimo, el texto diría que se ahorran 0,00 €.
 private const val MIN_VISIBLE_EUROS = 0.005
@@ -195,6 +200,28 @@ private fun SavedDataNotice(error: String) {
     )
 }
 
+/** Indica hace cuánto se descargaron los precios; se refresca cada minuto mientras la pantalla está abierta. */
+@Composable
+private fun DataAge(updatedAt: Long) {
+    val now by produceState(System.currentTimeMillis()) {
+        while (true) {
+            delay(MINUTE_MS)
+            value = System.currentTimeMillis()
+        }
+    }
+    val minutes = ((now - updatedAt) / MINUTE_MS).toInt()
+    Text(
+        when {
+            minutes < 1 -> stringResource(R.string.data_age_now)
+            minutes < MINUTES_PER_HOUR -> stringResource(R.string.data_age_minutes, minutes)
+            else -> stringResource(R.string.data_age_hours, minutes / MINUTES_PER_HOUR)
+        },
+        Modifier.padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
 /** Botón de alerta de una tarjeta; se colorea si esa gasolinera ya tiene alguna alerta. */
 @Composable
 private fun AlertIconButton(station: Station, hasAlert: Boolean, viewModel: StationsViewModel) {
@@ -230,6 +257,7 @@ private fun StationList(state: StationsUiState, query: String, viewModel: Statio
             }
         }
         item(key = "filters") { Filters(state, query, viewModel) }
+        state.updatedAt?.let { updatedAt -> item(key = "age") { DataAge(updatedAt) } }
         state.error?.let { error -> item(key = "notice") { SavedDataNotice(stringResource(error.message)) } }
         if (state.stations.isEmpty()) {
             item(key = "empty") { MessageView(stringResource(R.string.empty_stations)) }

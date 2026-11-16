@@ -51,6 +51,7 @@ data class StationsUiState(
     val zoneName: String? = null,
     val isFiltered: Boolean = false,
     val tankLitres: Int = DEFAULT_TANK_LITRES,
+    val updatedAt: Long? = null,
 )
 
 /** Carga las gasolineras, aplica los filtros, calcula el ahorro y permite marcar favoritas y crear alertas desde la lista. */
@@ -102,6 +103,8 @@ class StationsViewModel(
                 zoneName = zone.takeIf { it.isNotEmpty() }?.zoneName(),
                 isFiltered = brand != null || query.isNotBlank(),
                 tankLitres = litres,
+                // La más antigua es la de la última descarga completa: las alertas solo refrescan su provincia.
+                updatedAt = stations.minOfOrNull { it.updatedAt },
             )
         }
             // Filtrar miles de gasolineras en el hilo principal bloquearía la interfaz.

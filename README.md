@@ -17,12 +17,12 @@ App Android nativa para encontrar la gasolina más barata de España con los pre
 - **Semáforo de precios**: verde, ámbar o rojo según lo barato que es cada precio en su zona, también en el mapa y en el detalle.
 - **Acciones directas**: desde la lista puedes marcar una favorita o crear una alerta sin abrir la gasolinera.
 - **Filtros** por marca (sacadas de los datos reales) y por combustible, con orden de menor a mayor precio.
-- **Búsqueda** por localidad, dirección o marca, sin distinguir tildes ni mayúsculas.
+- **Búsqueda** por localidad, dirección o marca, sin distinguir tildes ni mayúsculas, y con el artículo delante o detrás («las palmas»). La lista indica hace cuánto se actualizaron los precios.
 - **Mapa con OpenStreetMap**: muestra las gasolineras a menos de 10 km con su precio sobre el mapa y destaca la más barata. Funciona con tu ubicación o escribiendo una dirección, así que el permiso de ubicación es opcional.
 - **Historial de precios** de cada gasolinera en una gráfica.
-- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple. Los precios se comprueban cada hora aproximadamente aunque la app esté cerrada. Cada alerta indica su precio actual y si está cumplida o cuánto le falta. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
+- **Alertas de precio**: eliges gasolinera, combustible y precio máximo, y recibes una notificación cuando se cumple; al tocarla se abre esa gasolinera. Los precios se comprueban cada hora aproximadamente aunque la app esté cerrada. Cada alerta indica su precio actual y si está cumplida o cuánto le falta. Puedes tener varias alertas por gasolinera, editarlas y borrarlas; la app rechaza las repetidas y los precios superiores a 10 €, que suelen ser erratas.
 - **Favoritas** guardadas en el móvil, que se quitan con un toque desde su propia lista.
-- **Detalle** con dirección, horario, precios y botón para abrir la ruta en la app de mapas.
+- **Detalle** con dirección, horario, si está abierta ahora, precios y botón para abrir la ruta en la app de mapas.
 - **Estados claros** de carga, error (sin internet o fallo de la API) y lista vacía. Si falla la red, se muestran los últimos datos guardados.
 - **Tema oscuro por defecto** y tema claro a un toque; la elección se recuerda.
 - **Pestaña Más** con la versión de la app, su creador, los enlaces a GitHub y a las actualizaciones, y las fuentes de los datos.

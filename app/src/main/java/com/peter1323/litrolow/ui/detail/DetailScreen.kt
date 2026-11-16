@@ -22,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peter1323.litrolow.R
 import com.peter1323.litrolow.data.model.FuelType
 import com.peter1323.litrolow.data.model.Station
+import com.peter1323.litrolow.data.model.isOpenAt
+import com.peter1323.litrolow.data.model.stationZone
 import com.peter1323.litrolow.ui.components.BrandHeader
 import com.peter1323.litrolow.ui.components.CreateAlertAction
 import com.peter1323.litrolow.ui.components.FavoriteButton
@@ -44,6 +47,7 @@ import com.peter1323.litrolow.ui.components.formatPrice
 import com.peter1323.litrolow.ui.components.savingsText
 import com.peter1323.litrolow.ui.theme.BrandGreen
 import com.peter1323.litrolow.ui.theme.OnBrandGreen
+import java.time.ZonedDateTime
 
 /** Pantalla con toda la información de una gasolinera. */
 @Composable
@@ -82,6 +86,7 @@ private fun Header(station: Station, state: DetailUiState, onToggleFavorite: () 
                 Text(station.address)
                 Text("${station.locality} (${station.province})")
                 Text(stringResource(R.string.schedule_format, station.schedule), Modifier.padding(top = 8.dp))
+                OpenNow(station)
             }
             FavoriteButton(state.isFavorite, OnBrandGreen, onToggleFavorite)
         }
@@ -96,6 +101,16 @@ private fun Header(station: Station, state: DetailUiState, onToggleFavorite: () 
             }
         }
     }
+}
+
+/** Indica si la gasolinera está abierta ahora, con la hora de su zona; no muestra nada si el horario no se entiende. */
+@Composable
+private fun OpenNow(station: Station) {
+    val isOpen = remember(station.schedule) {
+        val now = ZonedDateTime.now(stationZone(station.provinceId))
+        isOpenAt(station.schedule, now.dayOfWeek, now.toLocalTime())
+    } ?: return
+    Text(stringResource(if (isOpen) R.string.open_now else R.string.closed_now), fontWeight = FontWeight.Bold)
 }
 
 /** Texto con el combustible de la gráfica frente a su provincia, o null si esta gasolinera no lo vende o no hay con qué compararlo. */

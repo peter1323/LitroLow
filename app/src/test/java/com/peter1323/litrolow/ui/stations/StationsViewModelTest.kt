@@ -163,6 +163,7 @@ class StationsViewModelTest {
         val viewModel = viewModelWith(station("caro", price95 = 1.9), station("barato", price95 = 1.2))
         viewModel.uiState.launchIn(backgroundScope)
         assertEquals(listOf("barato", "caro"), viewModel.uiState.value.stations.map { it.id })
+        assertEquals(0L, viewModel.uiState.value.updatedAt)
     }
 
     /** Una gasolinera sin el combustible elegido no se puede comparar, así que no aparece. */
