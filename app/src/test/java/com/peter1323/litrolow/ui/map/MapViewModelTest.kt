@@ -71,6 +71,22 @@ class MapViewModelTest {
         assertEquals(listOf("1"), viewModel.uiState.value.nearby.map { it.id })
     }
 
+    /** Sin geocodificador, «salamanca» centra en la ciudad, no en la media de la provincia y de las calles con ese nombre. */
+    @Test
+    fun `sin geocodificador centra en la localidad con ese nombre`() = runTest(mainRule.dispatcher) {
+        val viewModel = viewModel(
+            listOf(
+                station("ciudad", locality = "SALAMANCA", province = "SALAMANCA", latitude = 40.96, longitude = -5.66),
+                station("pueblo", locality = "BEJAR", province = "SALAMANCA", latitude = 40.38, longitude = -5.76),
+                station("calle", locality = "ARROYO", province = "VALLADOLID", latitude = 41.6, longitude = -4.8, address = "AVENIDA SALAMANCA 1"),
+            ),
+            geocoded = null,
+        )
+        viewModel.uiState.launchIn(backgroundScope)
+        viewModel.searchAddress("salamanca")
+        assertEquals(GeoPoint(40.96, -5.66), viewModel.uiState.value.center)
+    }
+
     /** Una dirección que no existe debe explicarse sin mover el mapa. */
     @Test
     fun `direccion desconocida muestra el problema`() = runTest(mainRule.dispatcher) {

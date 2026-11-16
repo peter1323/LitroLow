@@ -10,6 +10,7 @@ import com.peter1323.litrolow.data.model.comparePrices
 import com.peter1323.litrolow.data.model.distanceKm
 import com.peter1323.litrolow.data.model.matches
 import com.peter1323.litrolow.data.model.normalizeText
+import com.peter1323.litrolow.data.model.searchableName
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -99,12 +100,18 @@ class MapViewModel(
         }
     }
 
-    /** Punto medio de las gasolineras que coinciden con el texto, por ejemplo las de una localidad. */
+    /**
+     * Punto medio de la localidad buscada: la que se llama igual o, si no, la que más gasolineras tiene.
+     * Promediar toda la provincia, o calles con ese nombre en otras, dejaría el centro en mitad del campo.
+     */
     private suspend fun centerOfMatchingStations(address: String): GeoPoint? {
         val query = normalizeText(address.trim())
         val matching = stations.first().filter { it.matches(query) }
         if (matching.isEmpty()) return null
-        return GeoPoint(matching.map { it.latitude }.average(), matching.map { it.longitude }.average())
+        val localities = matching.filter { searchableName(it.locality).contains(query) }.groupBy { it.locality }
+        val town = localities.values.maxByOrNull { (if (normalizeText(it.first().locality) == query) 1_000_000 else 0) + it.size }
+            ?: matching
+        return GeoPoint(town.map { it.latitude }.average(), town.map { it.longitude }.average())
     }
 
     /** Gasolineras dentro del radio que venden el combustible, de más barata a más cara. */
