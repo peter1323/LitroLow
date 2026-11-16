@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,10 +69,18 @@ private enum class Tab(val route: String, @param:StringRes val label: Int, val i
 
 private const val DETAIL_ARG = "stationId"
 
-/** Raíz de la interfaz: barra superior, barra inferior y navegación entre pantallas. */
+/** Raíz de la interfaz: barra superior, barra inferior y navegación entre pantallas. [openStationId] abre esa gasolinera al arrancar. */
 @Composable
-fun LitroLowRoot(isDark: Boolean, onToggleTheme: () -> Unit) {
+fun LitroLowRoot(isDark: Boolean, onToggleTheme: () -> Unit, openStationId: String? = null) {
     val navController = rememberNavController()
+    // Se recuerda para no volver a abrirla si Android recrea la pantalla.
+    var isStationOpened by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (openStationId != null && !isStationOpened) {
+            isStationOpened = true
+            navController.navigate("detail/$openStationId")
+        }
+    }
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val isTab = Tab.entries.any { it.route == currentRoute }
     var isEditingTank by rememberSaveable { mutableStateOf(false) }

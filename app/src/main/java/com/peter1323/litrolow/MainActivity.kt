@@ -25,9 +25,14 @@ class MainActivity : ComponentActivity() {
             val isDark by themePreferences.isDark.collectAsStateWithLifecycle()
             LaunchedEffect(isDark) { applySystemBars(isDark) }
             LitroLowTheme(isDark) {
-                LitroLowRoot(isDark, themePreferences::toggle)
+                LitroLowRoot(isDark, themePreferences::toggle, intent.getStringExtra(EXTRA_STATION_ID))
             }
         }
+    }
+
+    companion object {
+        /** Gasolinera que debe abrirse al arrancar; la envía la notificación de una alerta. */
+        const val EXTRA_STATION_ID = "stationId"
     }
 
     /** Ajusta los iconos del sistema: arriba siempre oscuros porque la barra es verde; abajo según el tema de la app. */
